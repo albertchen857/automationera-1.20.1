@@ -1,4 +1,10 @@
 {
+  "key.automationera.open_tutorial_ui": "自动化教程",
+  "category.automationera": "自动化时代",
+  "tutorial.ui.next": "下一个",
+  "tutorial.ui.close": "关闭",
+  "tutorial.ui.main": "教程主界面",
+
   "advancements.ironfarm.descr": "收集9组铁锭",
   "advancements.ironfarm.title": "刷铁机",
   "advancements.stonefarm.descr": "收集9组圆石",
@@ -678,5 +684,13 @@
   "emi.automationera.wanderingtrader_in.title":"流浪商人收购",
   "emi.automationera.wanderingtrader_out.title":"流浪商人购买",
   "emi.automationera.wanderingtrader_in.descr":"主收购水瓶. 除非空岛生存就是流浪拴绳",
-  "emi.automationera.wanderingtrader_out.descr":"主售卖蓝冰和药水. 除非空岛生存就是流浪拴绳"
+  "emi.automationera.wanderingtrader_out.descr":"主售卖蓝冰和药水. 除非空岛生存就是流浪拴绳",
+
+  "tutorial.iron.step1": "建造收集装置,长27高4末端向内突出2格",
+  "tutorial.iron.step2": "建造两个处死池,每个长4高3宽5,水放离缺口最远处且注意放置缺口处告示牌挡水",
+  "tutorial.iron.step3": "建造摔落通道(每个4根向上搭13)和生成平台(长13宽4预留3x2的缺口)",
+  "tutorial.iron.step4": "建造平台水流部分和主体部分基底,主体离平台(楼梯后)向内3格高2格",
+  "tutorial.iron.step5": "建造主体部分围墙和底座,遮阳罩离按钮高2格",
+  "tutorial.iron.step6": "完成主体部分村民间,床头朝内,总高5格",
+  "tutorial.iron.step7": "先利用矿车/工作方块/床吸引6个村民移动上来,然后在中心平台上放置船并勾引僵尸上来困进船,完成后拆除道路"
 }

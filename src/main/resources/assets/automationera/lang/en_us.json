@@ -1,4 +1,10 @@
 {
+  "key.automationera.open_tutorial_ui": "Automation Tutorial",
+  "category.automationera": "AutomationEra",
+  "tutorial.ui.next": "next",
+  "tutorial.ui.close": "close",
+  "tutorial.ui.main": "tutorial main page",
+
   "advancements.ironfarm.descr": "Collect 4 stacks of iron ingots",
   "advancements.ironfarm.title": "Iron Farm",
   "advancements.stonefarm.descr": "Collect 9 stacks of cobblestone",
@@ -717,8 +723,13 @@
   "emi.automationera.wanderingtrader_in.title":"Wandering Trader Acquisition",
   "emi.automationera.wanderingtrader_out.title":"Wandering Trader Buy",
   "emi.automationera.wanderingtrader_in.descr":"Mainly acquires water bottles. Unless in Skyblock, then leads.",
-  "emi.automationera.wanderingtrader_out.descr":"Mainly sells blue ice and potions. Unless in Skyblock, then leads."
+  "emi.automationera.wanderingtrader_out.descr":"Mainly sells blue ice and potions. Unless in Skyblock, then leads.",
 
-
-
+  "tutorial.iron.step1": "Build the collection system: length 27, height 4, with each end protruding 2 blocks inward.",
+  "tutorial.iron.step2": "Build two killing pools: each 4 long, 3 high, 5 wide. Place water at the furthest point from the gap, and be sure to place signs at the gap to block water.",
+  "tutorial.iron.step3": "Build drop channels (each with 4 pillars built up by 13) and the spawning platform (length 13, width 4, reserve a 3x2 gap).",
+  "tutorial.iron.step4": "Build the water flow section of the platform and the main structure's foundation. The main structure is 3 blocks inward and 2 blocks high from the platform (behind the stairs).",
+  "tutorial.iron.step5": "Build the main structure's walls and base. The sunshade should be 2 blocks above the button.",
+  "tutorial.iron.step6": "Complete the villager chambers in the main structure. Beds should face inward, total height is 5 blocks.",
+  "tutorial.iron.step7": "First use minecarts, workstations, or beds to lure 6 villagers up. Then place a boat on the central platform and lure a zombie onto the boat. Remove the road after completion."
 }

@@ -1,7 +1,11 @@
 package com.automationera;
 
 import com.automationera.advance.*;
+import com.automationera.keybinding.ModKeyBinding;
+import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.api.ModInitializer;
+import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
+import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
 import net.fabricmc.fabric.api.entity.event.v1.ServerPlayerEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.fabric.api.event.player.UseBlockCallback;
@@ -11,6 +15,8 @@ import net.minecraft.advancement.criterion.Criteria;
 import net.minecraft.advancement.criterion.Criterion;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
+import net.minecraft.client.option.KeyBinding;
+import net.minecraft.client.util.InputUtil;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.TntEntity;
 import net.minecraft.entity.EntityType;
@@ -34,12 +40,13 @@ import net.minecraft.util.math.ChunkPos;
 import net.minecraft.world.Difficulty;
 import net.minecraft.world.LightType;
 import net.minecraft.world.World;
+import org.lwjgl.glfw.GLFW;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.*;
 
-public class Automationera implements ModInitializer {
+public class Automationera implements ModInitializer, ClientModInitializer {
 	public static final String MOD_ID = "automationera";
 	public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
 
@@ -193,6 +200,8 @@ public class Automationera implements ModInitializer {
 	private int afkperiod = 0;
 	private int furnace = 0;
 	private int Observer = 0;
+
+	public static KeyBinding openTutorialKey;
 
 	@Override
 	public void onInitialize() {
@@ -491,6 +500,10 @@ public class Automationera implements ModInitializer {
 
 	}
 
+	@Override
+	public void onInitializeClient() {
+		ModKeyBinding.register();
+	}
 
 	private void checkPlayerStacks(ServerPlayerEntity player, Item item, int requiredStacks) {
 		int fullStackCount = 0;

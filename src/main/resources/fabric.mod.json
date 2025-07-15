@@ -23,6 +23,9 @@
 		],
 		"emi": [
 			"com.automationera.emi.emiPlugin"
+		],
+		"client": [
+			"com.automationera.Automationera"
 		]
 	},
 	"mixins": [
