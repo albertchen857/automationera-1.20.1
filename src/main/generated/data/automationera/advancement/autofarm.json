@@ -5,8 +5,8 @@
       "conditions": {
         "items": [
           "minecraft:wheat",
-          "minecraft:potato",
-          "minecraft:carrot"
+          "minecraft:carrot",
+          "minecraft:potato"
         ],
         "required_stacks": 4
       },

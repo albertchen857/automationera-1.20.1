@@ -12,7 +12,7 @@
     }
   },
   "display": {
-    "background": "minecraft:textures/block/smooth_stone.png",
+    "background": "minecraft:gui/advancements/backgrounds/smooth_stone.png",
     "description": {
       "translate": "advancements.attribute.descr"
     },

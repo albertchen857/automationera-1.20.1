@@ -4,9 +4,9 @@
     "a1": {
       "conditions": {
         "items": [
-          "minecraft:exposed_copper",
+          "minecraft:oxidized_copper",
           "minecraft:weathered_copper",
-          "minecraft:oxidized_copper"
+          "minecraft:exposed_copper"
         ],
         "required_stacks": 4
       },

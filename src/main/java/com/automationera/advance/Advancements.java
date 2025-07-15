@@ -45,12 +45,24 @@ public class Advancements{
     private AdvancementEntry furnacegroup;
 
     public void autoRoot(Consumer<AdvancementEntry> consumer){
+        AdvancementEntry rootAdvancement = Advancement.Builder.create()
+                .display(
+                        Items.DIAMOND,
+                        Text.literal("Root Test"),
+                        Text.literal("Should show background"),
+                        Identifier.of("gui/advancements/backgrounds/stone.png"),
+                        AdvancementFrame.TASK,
+                        true, true, false
+                )
+                .criterion("get_diamond", InventoryChangedCriterion.Conditions.items(Items.DIAMOND))
+                .build(consumer, "automationera:root_test");
+
         automaticFactory = Advancement.Builder.create()
                 .display(
                         Items.REDSTONE,
                         Text.translatable("advancements.automaticfactory.title"),
                         Text.translatable("advancements.automaticfactory.descr"),
-                        Identifier.of("textures/block/redstone_ore.png"),
+                        Identifier.of("textures/gui/advancements/backgrounds/stone.png"),
                         AdvancementFrame.TASK,
                         true, true, false
                 )
@@ -216,7 +228,7 @@ public class Advancements{
                         Items.VILLAGER_SPAWN_EGG,
                         Text.translatable("advancements.attribute.title"),
                         Text.translatable("advancements.attribute.descr"),
-                        Identifier.of("textures/block/smooth_stone.png"),
+                        Identifier.of("gui/advancements/backgrounds/smooth_stone.png"),
                         AdvancementFrame.TASK,
                         true, true, false
                 )
@@ -360,7 +372,7 @@ public class Advancements{
                         Items.BEACON,
                         Text.translatable("advancements.curcuitrevolution.title"),
                         Text.translatable("advancements.curcuitrevolution.descr"),
-                        Identifier.of("textures/block/bedrock.png"),
+                        Identifier.of("gui/advancements/backgrounds/bedrock.png"),
                         AdvancementFrame.TASK,
                         true, true, false
                 )
