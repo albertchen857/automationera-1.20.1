@@ -39,6 +39,13 @@ processResources {
 	filesMatching("fabric.mod.json") {
 		expand "version": inputs.properties.version
 	}
+
+	duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+
+	from(sourceSets.main.resources.srcDirs) {
+		include '**/*.nbt'
+		include '**/*.json'
+	}
 }
 
 tasks.withType(JavaCompile).configureEach {

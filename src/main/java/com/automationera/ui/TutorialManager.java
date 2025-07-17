@@ -1,5 +1,6 @@
 package com.automationera.ui;
 
+import com.google.gson.Gson;
 import net.minecraft.block.Block;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.nbt.NbtHelper;
@@ -14,8 +15,10 @@ import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.client.gui.DrawContext;
+import org.slf4j.LoggerFactory;
 
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.util.*;
 
 public class TutorialManager {
@@ -23,8 +26,11 @@ public class TutorialManager {
      * 从资源加载 nbt 文件
      */
     public static RegistryEntryLookup<Block> EntryLookup;
+    public static final org.slf4j.Logger LOGGER = LoggerFactory.getLogger("AutomationEraTutorial");
+    private static final Gson GSON = new Gson();
 
     public static NbtCompound loadNbtFromResource(String group, int step) {
+        TutorialData data = TutorialLoader.loadTutorial(group);
         ResourceManager rm = MinecraftClient.getInstance().getResourceManager();
         Identifier id = Identifier.of(
                 "automationera",
@@ -32,6 +38,7 @@ public class TutorialManager {
         );
         Resource res = rm.getResource(id).orElse(null);
         if (res == null) {
+            LOGGER.info("Res Null: {},{}",res,id);
             return null;
         }
         try (InputStream is = res.getInputStream()) {
@@ -77,4 +84,36 @@ public class TutorialManager {
             }
         }
     }
+    public class TutorialLoader {
+        private static final Gson GSON = new Gson();
+
+        public static TutorialData loadTutorial(String group) {
+            Identifier id = Identifier.of("automationera", "tutorial/" + group + ".json");
+
+            try {
+                ResourceManager rm = MinecraftClient.getInstance().getResourceManager();
+                Resource resource = rm.getResource(id).orElse(null);
+                if (resource == null) return null;
+
+                try (InputStreamReader reader = new InputStreamReader(resource.getInputStream())) {
+                    return GSON.fromJson(reader, TutorialData.class);
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+                return null;
+            }
+        }
+    }
+
+    public class TutorialData {
+        public String id;
+        public String title;
+        public List<TutorialStep> steps;
+
+        public static class TutorialStep {
+            public String nbt;
+            public String text;
+        }
+    }
+
 }
