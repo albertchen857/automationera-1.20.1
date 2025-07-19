@@ -1,0 +1,34 @@
+{
+  "id": "automationera:tutorial_wood",
+  "title": "advancements.woodfarm.title",
+  "steps": [
+    {
+      "nbt": "automationera:tutorial/wood/wood_step1.nbt",
+      "text": "tutorial.wood.step1"
+    },
+    {
+      "nbt": "automationera:tutorial/wood/wood_step2.nbt",
+      "text": "tutorial.wood.step2"
+    },
+    {
+      "nbt": "automationera:tutorial/wood/wood_step3.nbt",
+      "text": "tutorial.wood.step3"
+    },
+    {
+      "nbt": "automationera:tutorial/wood/wood_step4.nbt",
+      "text": "tutorial.wood.step4"
+    },
+    {
+      "nbt": "automationera:tutorial/wood/wood_step5.nbt",
+      "text": "tutorial.wood.step5"
+    },
+    {
+      "nbt": "automationera:tutorial/wood/wood_step6.nbt",
+      "text": "tutorial.wood.step6"
+    },
+    {
+      "nbt": "automationera:tutorial/wood/wood_step7.nbt",
+      "text": "tutorial.wood.step7"
+    }
+  ]
+}

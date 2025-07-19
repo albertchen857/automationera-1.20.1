@@ -2,19 +2,16 @@ package com.automationera.ui;
 
 import com.google.gson.Gson;
 import net.minecraft.block.Block;
-import net.minecraft.nbt.NbtCompound;
-import net.minecraft.nbt.NbtHelper;
-import net.minecraft.nbt.NbtIo;
-import net.minecraft.nbt.NbtSizeTracker;
-import net.minecraft.registry.RegistryEntryLookup;
-import net.minecraft.resource.Resource;
-import net.minecraft.resource.ResourceManager;
-import net.minecraft.util.Identifier;
-import net.minecraft.client.MinecraftClient;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
-import net.minecraft.util.math.BlockPos;
+import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
+import net.minecraft.nbt.*;
+import net.minecraft.registry.Registries;
+import net.minecraft.resource.Resource;
+import net.minecraft.resource.ResourceManager;
+import net.minecraft.state.property.Property;
+import net.minecraft.util.Identifier;
 import org.slf4j.LoggerFactory;
 
 import java.io.InputStream;
@@ -22,23 +19,22 @@ import java.io.InputStreamReader;
 import java.util.*;
 
 public class TutorialManager {
-    /**
-     * 从资源加载 nbt 文件
-     */
-    public static RegistryEntryLookup<Block> EntryLookup;
     public static final org.slf4j.Logger LOGGER = LoggerFactory.getLogger("AutomationEraTutorial");
     private static final Gson GSON = new Gson();
 
+    /**
+     * 从资源加载 nbt 文件
+     */
     public static NbtCompound loadNbtFromResource(String group, int step) {
-        TutorialData data = TutorialLoader.loadTutorial(group);
         ResourceManager rm = MinecraftClient.getInstance().getResourceManager();
         Identifier id = Identifier.of(
                 "automationera",
-                "tutorial/"+group+"/"+group+"_step"+step+".nbt"
+                "tutorial/" + group + "/" + group + "_step" + step + ".nbt"
         );
         Resource res = rm.getResource(id).orElse(null);
+        //LOGGER.info("Res Null: {},{}|{}/{}", res, id, group, step);
+
         if (res == null) {
-            LOGGER.info("Res Null: {},{}",res,id);
             return null;
         }
         try (InputStream is = res.getInputStream()) {
@@ -48,7 +44,6 @@ public class TutorialManager {
             return null;
         }
     }
-
 
     /**
      * 简单渲染 nbt 结构（俯视图），每个方块画成小方块
@@ -60,35 +55,72 @@ public class TutorialManager {
             return;
         }
 
-        // 解析 Structure nbt 的 palette/block
-        List<BlockState> palette = new ArrayList<>();
-        if (nbt.contains("palette", 9)) { // 9: List
-            for (var pal : nbt.getList("palette", 10)) {
-                palette.add(NbtHelper.toBlockState(EntryLookup, (NbtCompound) pal));
-            }
+        if (!nbt.contains("palette", NbtElement.LIST_TYPE) || !nbt.contains("blocks", NbtElement.LIST_TYPE)) {
+            ctx.drawText(MinecraftClient.getInstance().textRenderer, "结构体格式不符 " + group, x, y + 12, 0xFF0000, false);
+            LOGGER.error("Invalid structure nbt: " + nbt);
+            return;
         }
 
-        if (nbt.contains("blocks", 9)) {
-            for (var blk : nbt.getList("blocks", 10)) {
-                NbtCompound blkTag = (NbtCompound) blk;
-                int px = blkTag.getList("pos", 3).getInt(0);
-                int py = blkTag.getList("pos", 3).getInt(1);
-                int pz = blkTag.getList("pos", 3).getInt(2);
-                int stateIdx = blkTag.getInt("state");
-                BlockState state = palette.get(stateIdx);
-                // 只渲染俯视图
-                int drawX = x + px * 12;
-                int drawY = y + pz * 12;
-                int color = state.getBlock() == Blocks.AIR ? 0 : 0xCCCCCC;
-                ctx.fill(drawX, drawY, drawX + 10, drawY + 10, color);
+        // 解析 palette
+        List<BlockState> palette = new ArrayList<>();
+        NbtList paletteList = nbt.getList("palette", NbtElement.COMPOUND_TYPE);
+        for (NbtElement pal : paletteList) {
+            palette.add(readBlockStateFromNbt((NbtCompound) pal));
+        }
+
+        // 渲染 blocks
+        NbtList blocksList = nbt.getList("blocks", NbtElement.COMPOUND_TYPE);
+        for (NbtElement blk : blocksList) {
+            NbtCompound blkTag = (NbtCompound) blk;
+            NbtList posList = blkTag.getList("pos", NbtElement.INT_TYPE);
+            int px = posList.getInt(0);
+            int py = posList.getInt(1);
+            int pz = posList.getInt(2);
+            int stateIdx = blkTag.getInt("state");
+            BlockState state = (stateIdx < palette.size()) ? palette.get(stateIdx) : Blocks.AIR.getDefaultState();
+            // 只渲染俯视图：x = x+px*12, y = y+pz*12
+            int drawX = x + px * 12;
+            int drawY = y + pz * 12;
+            int color = state.getBlock() == Blocks.AIR ? 0 : 0xCCCCCC;
+            ctx.fill(drawX, drawY, drawX + 10, drawY + 10, color);
+        }
+        LOGGER.info("size:{},{}\nblock:{},{}",palette.size(),palette,blocksList.size(),blocksList);
+    }
+
+
+    // BlockState解析修正，Name字段才是真正的Block ID
+    public static BlockState readBlockStateFromNbt(NbtCompound compound) {
+        Identifier blockId = Identifier.of(compound.getString("Name")); // 不是 "automationera"
+        Block block = Registries.BLOCK.get(blockId);
+        BlockState state = block.getDefaultState();
+        // 处理 properties...
+        if (compound.contains("Properties", NbtElement.COMPOUND_TYPE)) {
+            NbtCompound props = compound.getCompound("Properties");
+            for (String key : props.getKeys()) {
+                String value = props.getString(key);
+                Property<?> property = block.getStateManager().getProperty(key);
+                if (property != null) {
+                    Optional<?> parsed = property.parse(value);
+                    if (parsed.isPresent()) {
+                        state = with(state, property, parsed.get());
+                    }
+                }
             }
         }
+        return state;
     }
-    public class TutorialLoader {
+
+
+    @SuppressWarnings("unchecked")
+    private static <T extends Comparable<T>> BlockState with(BlockState state, Property<T> property, Object value) {
+        return state.with(property, (T) value);
+    }
+
+    public static class TutorialLoader {
         private static final Gson GSON = new Gson();
 
         public static TutorialData loadTutorial(String group) {
-            Identifier id = Identifier.of("automationera", "tutorial/" + group + ".json");
+            Identifier id = Identifier.of("automationera", "nbt/" + group + ".json");
 
             try {
                 ResourceManager rm = MinecraftClient.getInstance().getResourceManager();
@@ -105,7 +137,7 @@ public class TutorialManager {
         }
     }
 
-    public class TutorialData {
+    public static class TutorialData {
         public String id;
         public String title;
         public List<TutorialStep> steps;
@@ -115,5 +147,6 @@ public class TutorialManager {
             public String text;
         }
     }
+
 
 }
