@@ -22,9 +22,9 @@ public class TutorialGroupScreen extends Screen {
     private int currentStep = 1;
     private MachineEntryList list;
     public static final org.slf4j.Logger LOGGER = LoggerFactory.getLogger("AutomationEraTutorial");
+
     private NbtCompound structureNbt;
     private IsometricRenderState renderState = new IsometricRenderState();
-    private NbtCompound rotatedNbt;
 
     private static final List<MachineInfo> factoryMachines = List.of(
             new MachineInfo("iron", Items.IRON_BLOCK, Text.translatable("tutorial.iron.title")),
@@ -43,8 +43,9 @@ public class TutorialGroupScreen extends Screen {
 
     @Override
     public boolean mouseDragged(double mouseX, double mouseY, int button, double deltaX, double deltaY) {
-        if (button == 0) {
-            renderState.angle += deltaX * 0.01f;
+        if (button == 0) { // 左键
+            renderState.addRotation((float) deltaX);
+            renderState.addPitch((float) deltaY);
             return true;
         }
         return super.mouseDragged(mouseX, mouseY, button, deltaX, deltaY);
@@ -52,9 +53,7 @@ public class TutorialGroupScreen extends Screen {
 
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double horizontal, double vertical) {
-        renderState.scale *= (1.0 + (horizontal) * 0.1);
-        if (renderState.scale < 0.5) renderState.scale = 0.5F;
-        if (renderState.scale > 8) renderState.scale = 8.0F;
+        renderState.addScale(1.0f + (float)(vertical + horizontal) * 0.08f);
         return true;
     }
 
@@ -124,16 +123,10 @@ public class TutorialGroupScreen extends Screen {
                         ).dimensions(250, this.height - 30, 60, 20)
                         .build()
         );
-        rotatedNbt = structureNbt;
-        this.addDrawableChild(ButtonWidget.builder(Text.literal("旋转90度"), btn -> {
-            rotatedNbt = TutorialManager.render90(rotatedNbt);
-        }).dimensions(this.width - 100, 20, 80, 20).build());
-
     }
 
     @Override
     public void render(DrawContext ctx, int mouseX, int mouseY, float delta) {
-        
         ctx.fill(0, 0, this.width, this.height, 0xCC000000);
         TextWidget titleWidget = new TextWidget(30, 20, 200, 20, this.title, this.textRenderer);
         this.addDrawableChild(titleWidget);
@@ -148,7 +141,7 @@ public class TutorialGroupScreen extends Screen {
             this.addDrawableChild(machineWidget);
             //Structure on Fuckyou Mojane
             structureNbt = TutorialManager.loadNbtFromResource(machine.id, currentStep);
-            TutorialManager.render(this, structureNbt, renderState, width/2, height/2);
+            TutorialManager.renderStructure3D(this, structureNbt, renderState, width/2, height/2, 300);
             Text descText = Text.translatable("tutorial." + machine.id + ".step" + currentStep);
             NarratedMultilineTextWidget descWidget = new NarratedMultilineTextWidget(180, descText, this.textRenderer);
             descWidget.setPosition(180, 180);
