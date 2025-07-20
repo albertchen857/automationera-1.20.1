@@ -1,6 +1,5 @@
 package com.automationera.ui;
 
-import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.screen.ButtonTextures;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.widget.ButtonWidget;
@@ -9,21 +8,23 @@ import net.minecraft.client.gui.widget.TextWidget;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
+import net.minecraft.nbt.NbtCompound;
 import net.minecraft.text.Text;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.util.Identifier;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
-import java.util.logging.Logger;
 
 public class TutorialGroupScreen extends Screen {
-    private static final ButtonTextures TEXTURE = new ButtonTextures(Identifier.ofVanilla("widget/button"), Identifier.ofVanilla("widget/button_disabled"), Identifier.ofVanilla("widget/button_highlighted"));
     private final String group; // "factory", "farm", "special"
     private int selectedMac = 0;
     private int currentStep = 1;
     private MachineEntryList list;
     public static final org.slf4j.Logger LOGGER = LoggerFactory.getLogger("AutomationEraTutorial");
+    private NbtCompound structureNbt;
+    private IsometricRenderState renderState = new IsometricRenderState();
+    private NbtCompound rotatedNbt;
 
     private static final List<MachineInfo> factoryMachines = List.of(
             new MachineInfo("iron", Items.IRON_BLOCK, Text.translatable("tutorial.iron.title")),
@@ -33,8 +34,6 @@ public class TutorialGroupScreen extends Screen {
     private static final List<MachineInfo> farmMachines = List.of();
     private static final List<MachineInfo> specialMachines = List.of();
 
-    // ...你可以为farm/special也写类似List...
-
     public TutorialGroupScreen(String group, int selectedMac, int currentStep) {
         super(Text.translatable("tutorial.group." + group));
         this.group = group;
@@ -42,8 +41,21 @@ public class TutorialGroupScreen extends Screen {
         this.currentStep = currentStep;
     }
 
-    public void Refresh(String group, int selectedMac, int currentStep){
-        client.setScreen(new TutorialGroupScreen(group, selectedMac, currentStep));
+    @Override
+    public boolean mouseDragged(double mouseX, double mouseY, int button, double deltaX, double deltaY) {
+        if (button == 0) {
+            renderState.angle += deltaX * 0.01f;
+            return true;
+        }
+        return super.mouseDragged(mouseX, mouseY, button, deltaX, deltaY);
+    }
+
+    @Override
+    public boolean mouseScrolled(double mouseX, double mouseY, double horizontal, double vertical) {
+        renderState.scale *= (1.0 + (horizontal) * 0.1);
+        if (renderState.scale < 0.5) renderState.scale = 0.5F;
+        if (renderState.scale > 8) renderState.scale = 8.0F;
+        return true;
     }
 
     @Override
@@ -112,6 +124,10 @@ public class TutorialGroupScreen extends Screen {
                         ).dimensions(250, this.height - 30, 60, 20)
                         .build()
         );
+        rotatedNbt = structureNbt;
+        this.addDrawableChild(ButtonWidget.builder(Text.literal("旋转90度"), btn -> {
+            rotatedNbt = TutorialManager.render90(rotatedNbt);
+        }).dimensions(this.width - 100, 20, 80, 20).build());
 
     }
 
@@ -130,7 +146,9 @@ public class TutorialGroupScreen extends Screen {
         if (machine != null) {
             TextWidget machineWidget = new TextWidget(180, 50, 200, 20, machine.name, this.textRenderer);
             this.addDrawableChild(machineWidget);
-            TutorialManager.renderNbtStructure(ctx, machine.id, currentStep, 180, 80);
+            //Structure on Fuckyou Mojane
+            structureNbt = TutorialManager.loadNbtFromResource(machine.id, currentStep);
+            TutorialManager.render(this, structureNbt, renderState, width/2, height/2);
             Text descText = Text.translatable("tutorial." + machine.id + ".step" + currentStep);
             NarratedMultilineTextWidget descWidget = new NarratedMultilineTextWidget(180, descText, this.textRenderer);
             descWidget.setPosition(180, 180);
@@ -152,45 +170,6 @@ public class TutorialGroupScreen extends Screen {
         }
     }
 
-    public class IsometricRenderState {
-        public double angle = Math.PI / 4; // 45度视角
-        public double scale = 1.0;
-        public int offsetX = 0, offsetY = 0; // 拖动平移
-        public boolean dragging = false;
-        public int lastMouseX, lastMouseY;
-    }
-
-    IsometricRenderState renderState = new IsometricRenderState();
-
-    @Override
-    public boolean mouseDragged(double mouseX, double mouseY, int button, double deltaX, double deltaY) {
-        if (renderState.dragging && button == 0) {
-            renderState.offsetX += deltaX;
-            renderState.offsetY += deltaY;
-            renderState.angle += deltaX*0.01;
-            return true;
-        }
-        return super.mouseDragged(mouseX, mouseY, button, deltaX, deltaY);
-    }
-
-
-    @Override
-    public boolean mouseClicked(double mouseX, double mouseY, int button) {
-        if (button == 0) {
-            renderState.dragging = true;
-            renderState.lastMouseX = (int) mouseX;
-            renderState.lastMouseY = (int) mouseY;
-        }
-        return super.mouseClicked(mouseX, mouseY, button);
-    }
-
-    @Override
-    public boolean mouseReleased(double mouseX, double mouseY, int button) {
-        if (button == 0) {
-            renderState.dragging = false;
-        }
-        return super.mouseReleased(mouseX, mouseY, button);
-    }
 
 }
 
