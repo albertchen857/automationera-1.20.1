@@ -127,7 +127,7 @@ public class TutorialGroupScreen extends Screen {
 
     @Override
     public void render(DrawContext ctx, int mouseX, int mouseY, float delta) {
-        ctx.fill(0, 0, this.width, this.height, 0xCC000000);
+        ctx.fill(0, 0, this.width, this.height, 0x55000000);
         TextWidget titleWidget = new TextWidget(30, 20, 200, 20, this.title, this.textRenderer);
         this.addDrawableChild(titleWidget);
         List<MachineInfo> choose = switch (group) {
@@ -141,13 +141,12 @@ public class TutorialGroupScreen extends Screen {
             this.addDrawableChild(machineWidget);
             //Structure on Fuckyou Mojane
             structureNbt = TutorialManager.loadNbtFromResource(machine.id, currentStep);
-            TutorialManager.renderStructure3D(this, structureNbt, renderState, width/2, height/2, 300);
+            TutorialManager.renderStructure3D(this, structureNbt, renderState, width, height, width);
             Text descText = Text.translatable("tutorial." + machine.id + ".step" + currentStep);
             NarratedMultilineTextWidget descWidget = new NarratedMultilineTextWidget(180, descText, this.textRenderer);
             descWidget.setPosition(180, 180);
             this.addDrawableChild(descWidget);
         }
-
         super.render(ctx, mouseX, mouseY, delta);
     }
 
