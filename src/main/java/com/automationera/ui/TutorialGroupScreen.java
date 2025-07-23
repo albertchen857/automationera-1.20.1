@@ -33,6 +33,7 @@ public class TutorialGroupScreen extends Screen {
     );
     private static final List<MachineInfo> farmMachines = List.of();
     private static final List<MachineInfo> specialMachines = List.of();
+    private List<MachineInfo> choose = List.of();
 
     public TutorialGroupScreen(String group, int selectedMac, int currentStep) {
         super(Text.translatable("tutorial.group." + group));
@@ -45,7 +46,7 @@ public class TutorialGroupScreen extends Screen {
     public boolean mouseDragged(double mouseX, double mouseY, int button, double deltaX, double deltaY) {
         if (button == 0) { // 左键
             renderState.addRotation((float) deltaX);
-            renderState.addPitch((float) deltaY);
+            renderState.addYc((float) deltaY);
             return true;
         }
         return super.mouseDragged(mouseX, mouseY, button, deltaX, deltaY);
@@ -59,20 +60,13 @@ public class TutorialGroupScreen extends Screen {
 
     @Override
     protected void init() {
-        int y = 50;
-        int x = 30;
-        int btnHeight = 24;
-        int i = 0;
-
-        List<MachineInfo> choose;
-        switch (group){
-            case "factory" -> choose = factoryMachines;
-            case "special" -> choose = specialMachines;
-            default -> choose = farmMachines;
-        }
-        int listWidth = this.width / 3;
+        choose = switch (group){//list
+            case "factory" -> factoryMachines;
+            case "special" -> specialMachines;
+            default -> farmMachines;
+        };
+        int listWidth = this.width / 4;
         list = new MachineEntryList(client, listWidth, this.height - 40, 40, 20);
-
         for (int m = 0; m < choose.size(); m++) {
             int idx = m;
             MachineInfo info = choose.get(m);
@@ -82,7 +76,7 @@ public class TutorialGroupScreen extends Screen {
         }
         list.selectByIndex(selectedMac);
         this.addDrawableChild(list);
-
+        //close UI
         this.addDrawableChild(
                 ButtonWidget.builder(
                                 Text.translatable("tutorial.ui.close"),
@@ -90,7 +84,7 @@ public class TutorialGroupScreen extends Screen {
                         ).dimensions(20, this.height - 30, 60, 20)
                         .build()
         );
-
+        //Struct Setting UI
         this.addDrawableChild(
                 ButtonWidget.builder(
                                 Text.translatable("tutorial.ui.prev"),
@@ -98,10 +92,9 @@ public class TutorialGroupScreen extends Screen {
                                     if (currentStep > 1) currentStep--;
                                     this.client.setScreen(new TutorialGroupScreen(group, selectedMac, currentStep));
                                 }
-                        ).dimensions(180, this.height - 30, 60, 20)
+                        ).dimensions(120, this.height - 30, 40, 20)
                         .build()
         );
-
         this.addDrawableChild(
                 ButtonWidget.builder(
                                 Text.translatable("tutorial.ui.next"),
@@ -115,54 +108,45 @@ public class TutorialGroupScreen extends Screen {
                                     if (TutorialManager.loadNbtFromResource(machine.id, currentStep + 1) != null) {
                                         currentStep++;
                                         this.client.setScreen(new TutorialGroupScreen(group, selectedMac, currentStep));
-                                        LOGGER.info("CS++");
                                     }else{
-                                        LOGGER.info("CS+ NULL");
+                                        LOGGER.warn("CurrentStep Up NULL");
                                     }
                                 }
-                        ).dimensions(250, this.height - 30, 60, 20)
+                        ).dimensions(160, this.height - 30, 40, 20)
                         .build()
         );
+        MachineInfo machine = choose.isEmpty() ? null : choose.get(Math.min(selectedMac, choose.size()-1));
+        //group page title
+        TextWidget titleWidget = new TextWidget(2, 20, 200, 20, this.title.copy().append(Text.literal("-")).append(machine.name), this.textRenderer);
+        this.addDrawableChild(titleWidget);
+        //struct tutorials
+        NarratedMultilineTextWidget descWidget = new NarratedMultilineTextWidget(180, Text.translatable("tutorial." + machine.id + ".step" + currentStep), this.textRenderer);
+        descWidget.setPosition(180, 180);
+        this.addDrawableChild(descWidget);
     }
 
     @Override
     public void render(DrawContext ctx, int mouseX, int mouseY, float delta) {
-        ctx.fill(0, 0, this.width, this.height, 0x55000000);
-        TextWidget titleWidget = new TextWidget(30, 20, 200, 20, this.title, this.textRenderer);
-        this.addDrawableChild(titleWidget);
-        List<MachineInfo> choose = switch (group) {
-            case "factory" -> factoryMachines;
-            case "special" -> specialMachines;
-            default -> farmMachines;
-        };
+        ctx.fill(0, 0, this.width, this.height, 0x77000000);
+        super.render(ctx, mouseX, mouseY, delta);
         MachineInfo machine = choose.isEmpty() ? null : choose.get(Math.min(selectedMac, choose.size()-1));
         if (machine != null) {
-            TextWidget machineWidget = new TextWidget(180, 50, 200, 20, machine.name, this.textRenderer);
-            this.addDrawableChild(machineWidget);
-            //Structure on Fuckyou Mojane
+            //Structure render
             structureNbt = TutorialManager.loadNbtFromResource(machine.id, currentStep);
             TutorialManager.renderStructure3D(this, structureNbt, renderState, width, height, width);
-            Text descText = Text.translatable("tutorial." + machine.id + ".step" + currentStep);
-            NarratedMultilineTextWidget descWidget = new NarratedMultilineTextWidget(180, descText, this.textRenderer);
-            descWidget.setPosition(180, 180);
-            this.addDrawableChild(descWidget);
         }
-        super.render(ctx, mouseX, mouseY, delta);
     }
 
     private static class MachineInfo {
         public final String id;
         public final Item icon;
         public final Text name;
-
         public MachineInfo(String id, Item icon, Text name) {
             this.id = id;
             this.icon = icon;
             this.name = name;
         }
     }
-
-
 }
 
 

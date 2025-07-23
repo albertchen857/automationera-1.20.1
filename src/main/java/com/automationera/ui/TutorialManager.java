@@ -15,6 +15,7 @@ import net.minecraft.client.render.block.BlockRenderManager;
 import net.minecraft.client.render.model.json.ModelTransformationMode;
 
 import net.minecraft.client.util.math.MatrixStack;
+import net.minecraft.fluid.FluidState;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.*;
 import net.minecraft.registry.Registries;
@@ -39,7 +40,7 @@ public class TutorialManager {
         ResourceManager rm = MinecraftClient.getInstance().getResourceManager();
         Identifier id = Identifier.of("automationera","tutorial/"+group+"/"+group+"_step"+step+".nbt");
         Resource res = rm.getResource(id).orElse(null);
-        LOGGER.info("loadNbtFromResource: res={} id={}", res, id);
+        //LOGGER.info("loadNbtFromResource: res={} id={}", res, id);
         if (res == null) return null;
         try (InputStream is = res.getInputStream()) {
             return NbtIo.readCompressed(is, NbtSizeTracker.of(Long.MAX_VALUE));
@@ -74,20 +75,20 @@ public class TutorialManager {
         double dx = (minX + maxX) / 2.0;
         double dy = (minY + maxY) / 2.0;
         double dz = (minZ + maxZ) / 2.0;
-        double globalScale = state.scale * size / Math.max(1, Math.max(maxX-minX+1, Math.max(maxY-minY+1, maxZ-minZ+1)))/1.2f;
-
+        double globalScale = state.scale * size / Math.max(1, Math.max(maxX-minX+1, Math.max(maxY-minY+1, maxZ-minZ+1))) / 1.2f;
 
         MatrixStack matrices = new MatrixStack();
         matrices.push();
-        // 放置到右侧中间偏移
-        matrices.translate(width / 3f * 2f, height / 3f, 100);
+        matrices.translate(width / 3f * 2f - 30, height / 8f * 5f + state.yc, 200);
 
-        // 旋转 + 翻转 Y 解决凹陷问题
-        matrices.multiply(new Quaternionf().rotateY((float)Math.toRadians(state.rotation)));
+        double nx = (Math.sin(Math.toRadians(state.rotation)) * Math.cos(Math.toRadians(state.pitch))),
+                ny = (-Math.sin(Math.toRadians(state.pitch))),
+                nz = (Math.cos(Math.toRadians(state.rotation)) * Math.cos(Math.toRadians(state.pitch)));
+        matrices.multiply(new Quaternionf().rotateX((float) -Math.asin(ny)));
+        matrices.multiply(new Quaternionf().rotateY((float) Math.atan2(nx, nz)));
+
         matrices.scale((float)globalScale, (float)-globalScale, (float)globalScale);
-
-        // 调整到中心原点
-        matrices.translate(-dx, -dy, -dz);
+        matrices.translate(-dx, -dy + 12, -dz);
 
         RenderSystem.enableDepthTest();
         RenderSystem.depthMask(true);
@@ -100,21 +101,46 @@ public class TutorialManager {
         );
 
         VertexConsumerProvider.Immediate immediate = mc.getBufferBuilders().getEntityVertexConsumers();
-        int rendered = 0;
+
         for (NbtElement blk : blocks) {
-            NbtCompound tag = (NbtCompound)blk;
+            NbtCompound tag = (NbtCompound) blk;
             NbtList pos = tag.getList("pos", NbtElement.INT_TYPE);
             int x = pos.getInt(0), y = pos.getInt(1), z = pos.getInt(2);
             int idx = tag.getInt("state");
             if (idx < 0 || idx >= palette.size()) continue;
             BlockState bs = palette.get(idx);
-            if (bs.isAir()) continue;
 
             matrices.push();
             matrices.translate(x, y, z);
-            brm.renderBlockAsEntity(bs, matrices, immediate, 15728880, OverlayTexture.DEFAULT_UV);
+
+            // 1. 渲染固体方块
+            if (!bs.isAir()) {
+                brm.renderBlockAsEntity(bs, matrices, immediate, 15728880, OverlayTexture.DEFAULT_UV);
+            }
+
+            // 2. 渲染液体（只渲染满液体）
+            FluidState fs = bs.getFluidState();
+            if (fs != null && !fs.isEmpty()) {
+                var handler = net.fabricmc.fabric.api.client.render.fluid.v1.FluidRenderHandlerRegistry.INSTANCE.get(fs.getFluid());
+                if (handler != null) {
+                    var sprites = handler.getFluidSprites(mc.world, null, fs);
+                    var color = handler.getFluidColor(mc.world, null, fs);
+                    var sprite = sprites[0];
+                    VertexConsumer vc = immediate.getBuffer(net.minecraft.client.render.RenderLayer.getTranslucent());
+                    int a = (color >> 24) & 0xFF, r = (color >> 16) & 0xFF, g = (color >> 8) & 0xFF, b = (color) & 0xFF;
+                    float minU = sprite.getMinU(), maxU = sprite.getMaxU(), minV = sprite.getMinV(), maxV = sprite.getMaxV();
+                    Matrix4f mat = matrices.peek().getPositionMatrix();
+                    int light = 15728880;
+                    // 关键点：Y坐标根据液体高度调整，兼容流动和残留
+                    float h = fs.getHeight(); // 0~1
+                    vc.vertex(mat, 0, h, 0).color(r, g, b, a).texture(minU, minV).light(light).normal(0, 1, 0);
+                    vc.vertex(mat, 1, h, 0).color(r, g, b, a).texture(maxU, minV).light(light).normal(0, 1, 0);
+                    vc.vertex(mat, 1, h, 1).color(r, g, b, a).texture(maxU, maxV).light(light).normal(0, 1, 0);
+                    vc.vertex(mat, 0, h, 1).color(r, g, b, a).texture(minU, maxV).light(light).normal(0, 1, 0);
+                }
+            }
+
             matrices.pop();
-            rendered++;
         }
         immediate.draw();
 
@@ -125,6 +151,9 @@ public class TutorialManager {
 
         matrices.pop();
     }
+
+
+
 
 
     //private static BlockState state; fuck you java
@@ -153,5 +182,20 @@ public class TutorialManager {
             return state.with(prop, opt.get());
         }
         return state;
+    }
+
+    private static void multiplyMM(float[] result, int rOffset,
+                                   float[] lhs, int lOffset,
+                                   float[] rhs) {
+        // 标准 4x4 矩阵乘法
+        for (int i = 0; i < 4; i++) {
+            for (int j = 0; j < 4; j++) {
+                float sum = 0;
+                for (int k = 0; k < 4; k++) {
+                    sum += lhs[lOffset + k * 4 + i] * rhs[rOffset + j * 4 + k];
+                }
+                result[rOffset + j * 4 + i] = sum;
+            }
+        }
     }
 }
