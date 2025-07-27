@@ -13,75 +13,88 @@ import com.automationera.ui.TutorialGroupScreen;
 import org.slf4j.Logger;
 
 public class ModKeyBinding {
-    private static final Logger LOGGER = org.slf4j.LoggerFactory.getLogger("AutomationEraKeyBinding");
+    public static final Logger LOGGER = org.slf4j.LoggerFactory.getLogger("AutomationEraKeyBinding");
+    public static KeyBinding openTutorialKey;
+    public static KeyBinding leftKey;
+    public static KeyBinding rightKey;
+    public static KeyBinding upKey;
+    public static KeyBinding downKey;
+    public static KeyBinding inKey;
+    public static KeyBinding outKey;
+    public static KeyBinding nextKey;
+    public static KeyBinding prevKey;
+    public static KeyBinding nextTKey;
+    public static KeyBinding prevTKey;
+    public static KeyBinding resetKey;
+
     public static void register() {
-        KeyBinding openTutorialKey = KeyBindingHelper.registerKeyBinding(new KeyBinding(
+         openTutorialKey = KeyBindingHelper.registerKeyBinding(new KeyBinding(
                 "key.automationera.open_tutorial_ui",
                 InputUtil.Type.KEYSYM,
                 GLFW.GLFW_KEY_G,
                 "category.automationera"
         ));
-        KeyBinding leftKey = KeyBindingHelper.registerKeyBinding(new KeyBinding(
+        leftKey = KeyBindingHelper.registerKeyBinding(new KeyBinding(
                 "key.automationera.tutorial_rotate_left",
                 InputUtil.Type.KEYSYM,
                 GLFW.GLFW_KEY_A,
                 "category.automationera"
         ));
-        KeyBinding rightKey = KeyBindingHelper.registerKeyBinding(new KeyBinding(
+        rightKey = KeyBindingHelper.registerKeyBinding(new KeyBinding(
                 "key.automationera.tutorial_rotate_right",
                 InputUtil.Type.KEYSYM,
                 GLFW.GLFW_KEY_D,
                 "category.automationera"
         ));
-        KeyBinding upKey = KeyBindingHelper.registerKeyBinding(new KeyBinding(
+        upKey = KeyBindingHelper.registerKeyBinding(new KeyBinding(
                 "key.automationera.tutorial_move_up",
                 InputUtil.Type.KEYSYM,
                 GLFW.GLFW_KEY_W,
                 "category.automationera"
         ));
-        KeyBinding downKey = KeyBindingHelper.registerKeyBinding(new KeyBinding(
+        downKey = KeyBindingHelper.registerKeyBinding(new KeyBinding(
                 "key.automationera.tutorial_move_down",
                 InputUtil.Type.KEYSYM,
                 GLFW.GLFW_KEY_S,
                 "category.automationera"
         ));
-        KeyBinding inKey = KeyBindingHelper.registerKeyBinding(new KeyBinding(
+        inKey = KeyBindingHelper.registerKeyBinding(new KeyBinding(
                 "key.automationera.tutorial_zoom_in",
                 InputUtil.Type.KEYSYM,
                 -1,
                 "category.automationera"
         ));
-        KeyBinding outKey = KeyBindingHelper.registerKeyBinding(new KeyBinding(
+        outKey = KeyBindingHelper.registerKeyBinding(new KeyBinding(
                 "key.automationera.tutorial_zoom_out",
                 InputUtil.Type.KEYSYM,
                 -1,
                 "category.automationera"
         ));
-        KeyBinding nextKey = KeyBindingHelper.registerKeyBinding(new KeyBinding(
+        nextKey = KeyBindingHelper.registerKeyBinding(new KeyBinding(
                 "key.automationera.tutorial_next_step",
                 InputUtil.Type.KEYSYM,
                 GLFW.GLFW_KEY_EQUAL,
                 "category.automationera"
         ));
-        KeyBinding prevKey = KeyBindingHelper.registerKeyBinding(new KeyBinding(
+        prevKey = KeyBindingHelper.registerKeyBinding(new KeyBinding(
                 "key.automationera.tutorial_last_step",
                 InputUtil.Type.KEYSYM,
                 GLFW.GLFW_KEY_MINUS,
                 "category.automationera"
         ));
-        KeyBinding nextTKey = KeyBindingHelper.registerKeyBinding(new KeyBinding(
+        nextTKey = KeyBindingHelper.registerKeyBinding(new KeyBinding(
                 "key.automationera.tutorial_next_tutorial",
                 InputUtil.Type.KEYSYM,
                 -1,
                 "category.automationera"
         ));
-        KeyBinding prevTKey = KeyBindingHelper.registerKeyBinding(new KeyBinding(
+        prevTKey = KeyBindingHelper.registerKeyBinding(new KeyBinding(
                 "key.automationera.tutorial_last_tutorial",
                 InputUtil.Type.KEYSYM,
                 -1,
                 "category.automationera"
         ));
-        KeyBinding resetKey = KeyBindingHelper.registerKeyBinding(new KeyBinding(
+        resetKey = KeyBindingHelper.registerKeyBinding(new KeyBinding(
                 "key.automationera.tutorial_reset",
                 InputUtil.Type.KEYSYM,
                 GLFW.GLFW_KEY_R,
@@ -142,7 +155,7 @@ public class ModKeyBinding {
                 LOGGER.info("Zou pressed");
                 Screen current = MinecraftClient.getInstance().currentScreen;
                 if (current instanceof TutorialGroupScreen) {
-                    ((TutorialGroupScreen) current).rotateKey(-0.2f);
+                    ((TutorialGroupScreen) current).zoomKey(-0.2f);
                 }
             }
         });

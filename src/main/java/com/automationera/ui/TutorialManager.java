@@ -5,14 +5,18 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import net.fabricmc.fabric.api.client.render.fluid.v1.FluidRenderHandlerRegistry;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
+import net.minecraft.block.Blocks;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.render.*;
 import net.minecraft.client.render.block.BlockRenderManager;
 import net.minecraft.client.render.model.json.ModelTransformationMode;
 
+import net.minecraft.client.texture.Sprite;
+import net.minecraft.client.texture.SpriteAtlasTexture;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.fluid.FluidState;
+import net.minecraft.fluid.Fluids;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.*;
 import net.minecraft.registry.Registries;
@@ -45,7 +49,7 @@ public class TutorialManager {
         }
     }
 
-    public static void renderStructure3D(Screen screen, NbtCompound nbt, IsometricRenderState state, int width, int height, int size) {
+    public static void renderStructure3D(Screen screen, NbtCompound nbt,int step, IsometricRenderState state, int width, int height, int size, List<List<TutorialGroupScreen.SelectionBox>> SelectBox) {
         if (nbt == null || !nbt.contains("palette") || !nbt.contains("blocks")) {
             LOGGER.warn("renderStructure3D: NBT invalid");
             return;
@@ -77,7 +81,7 @@ public class TutorialManager {
 
         MatrixStack matrices = new MatrixStack();
         matrices.push();
-        matrices.translate(width / 3f * 2f - 30, height / 8f * 5f + state.yc - 30, 200);//position
+        matrices.translate(width / 3f * 2f - 30, height / 8f * 5f + state.yc - 40, 200);//position
 
         double nx = (Math.sin(Math.toRadians(state.rotation)) * Math.cos(Math.toRadians(state.pitch))),
                 ny = (-Math.sin(Math.toRadians(state.pitch))),
@@ -111,23 +115,44 @@ public class TutorialManager {
             matrices.push();
             matrices.translate(x, y, z);
 
-            if (!bs.isAir() && bs.getFluidState().isEmpty()) {
-                brm.renderBlockAsEntity(bs, matrices, immediate, 15728880, OverlayTexture.DEFAULT_UV); //Main render
-            }else if (bs.getFluidState() != null && !bs.getFluidState().isEmpty()) {
-                LOGGER.info("Try rendering fluid");
-                var handler = FluidRenderHandlerRegistry.INSTANCE.get(bs.getFluidState().getFluid());
-                if (handler != null)
-                    handler.renderFluid(
-                            new BlockPos(x, y, z),
-                            mc.world,
-                            immediate.getBuffer(RenderLayer.getTranslucent()),
-                            bs,
-                            bs.getFluidState()
-                    );
+            Block block = bs.getBlock();
 
-                LOGGER.info("imm:{},world:{},pos:{},bs:{}",immediate.getBuffer(RenderLayer.getTranslucent()),mc.world,new BlockPos(x, y, z),bs);
+            if (!bs.isAir()) {
+                brm.renderBlockAsEntity(bs, matrices, immediate, 15728880, OverlayTexture.DEFAULT_UV);
+            }
+            if (!bs.getFluidState().isEmpty()) {
+                boolean isWaterlogged = false;
+                int level = 0;
+                Identifier tex = block == Blocks.LAVA
+                        ? Identifier.of("minecraft", "block/lava_still")
+                        : Identifier.of("minecraft", "block/water_still");
+                for (Property<?> prop : bs.getProperties()) {
+                    if (prop.getName().equals("waterlogged") && bs.get(prop).toString().equals("true")) {
+                        isWaterlogged = true;
+                        break;
+                    }
+                }
+                for (Property<?> prop : bs.getProperties()) {
+                    if (prop.getName().toLowerCase().contains("level")) {
+                        level = Integer.parseInt(bs.get(prop).toString());
+                        break;
+                    }
+                }
+                boolean isWater = block == Blocks.WATER || isWaterlogged;
+                float fluidHeight = (level == 0) ? 1.0f : (8 - level) / 8.0f;
+                int r = isWater ? 63 : 255;
+                int g = isWater ? 118 : 255;
+                int b = isWater ? 228 : 255;
+                renderFluidCube(matrices, immediate, tex, 0, fluidHeight, 0.9f, r, g, b);
             }
             matrices.pop();
+        }
+        if (SelectBox != null && step-1 < SelectBox.size()) {
+            long time = System.currentTimeMillis();
+            float a = 0.5f + 0.3f * (float)Math.abs(Math.sin(time / 300.0));
+            for (TutorialGroupScreen.SelectionBox box : SelectBox.get(step-1)) {
+                renderSelectionBoxOutline(matrices, immediate, box, 2.0f, 1f, 1f, 0.0f, a); // 粗亮黄
+            }
         }
         immediate.draw();
 
@@ -139,8 +164,119 @@ public class TutorialManager {
         matrices.pop();
     }
 
+    public static void renderFluidCube(MatrixStack matrices, VertexConsumerProvider consumers,
+                                       Identifier texture, float y1, float y2, float alpha, int r,int g, int b) {
+        MinecraftClient mc = MinecraftClient.getInstance();
+        SpriteAtlasTexture atlas = mc.getBakedModelManager().getAtlas(SpriteAtlasTexture.BLOCK_ATLAS_TEXTURE);
+        Sprite sprite = atlas.getSprite(texture);
 
+        float u0 = sprite.getMinU();
+        float u1 = sprite.getMaxU();
+        float v0 = sprite.getMinV();
+        float v1 = sprite.getMaxV();
 
+        RenderSystem.enableBlend();
+        RenderSystem.disableCull();
+        RenderSystem.defaultBlendFunc();
+        RenderSystem.setShaderTexture(0, SpriteAtlasTexture.BLOCK_ATLAS_TEXTURE);
+        RenderSystem.setShaderColor(1, 1, 1, alpha);
+
+        Matrix4f mat = matrices.peek().getPositionMatrix();
+        VertexConsumer builder = consumers.getBuffer(RenderLayer.getTranslucent());
+
+        int a = Math.round(255 * alpha);
+        int light = 0xF000F0;
+
+        // 上面
+        builder.vertex(mat, 0, y2, 0).texture(u0, v0).color(r, g, b, a).light(light).normal(0, 1, 0);
+        builder.vertex(mat, 1, y2, 0).texture(u1, v0).color(r, g, b, a).light(light).normal(0, 1, 0);
+        builder.vertex(mat, 1, y2, 1).texture(u1, v1).color(r, g, b, a).light(light).normal(0, 1, 0);
+        builder.vertex(mat, 0, y2, 1).texture(u0, v1).color(r, g, b, a).light(light).normal(0, 1, 0);
+
+        // 下面
+        builder.vertex(mat, 0, y1, 0).texture(u0, v0).color(r, g, b, a).light(light).normal(0, -1, 0);
+        builder.vertex(mat, 1, y1, 0).texture(u1, v0).color(r, g, b, a).light(light).normal(0, -1, 0);
+        builder.vertex(mat, 1, y1, 1).texture(u1, v1).color(r, g, b, a).light(light).normal(0, -1, 0);
+        builder.vertex(mat, 0, y1, 1).texture(u0, v1).color(r, g, b, a).light(light).normal(0, -1, 0);
+
+        // 前面
+        builder.vertex(mat, 0, y1, 0).texture(u0, v0).color(r, g, b, a).light(light).normal(0, 0, -1);
+        builder.vertex(mat, 1, y1, 0).texture(u1, v0).color(r, g, b, a).light(light).normal(0, 0, -1);
+        builder.vertex(mat, 1, y2, 0).texture(u1, v1).color(r, g, b, a).light(light).normal(0, 0, -1);
+        builder.vertex(mat, 0, y2, 0).texture(u0, v1).color(r, g, b, a).light(light).normal(0, 0, -1);
+
+        // 后面
+        builder.vertex(mat, 0, y1, 1).texture(u0, v0).color(r, g, b, a).light(light).normal(0, 0, 1);
+        builder.vertex(mat, 1, y1, 1).texture(u1, v0).color(r, g, b, a).light(light).normal(0, 0, 1);
+        builder.vertex(mat, 1, y2, 1).texture(u1, v1).color(r, g, b, a).light(light).normal(0, 0, 1);
+        builder.vertex(mat, 0, y2, 1).texture(u0, v1).color(r, g, b, a).light(light).normal(0, 0, 1);
+
+        // 左面
+        builder.vertex(mat, 0, y1, 0).texture(u0, v0).color(r, g, b, a).light(light).normal(-1, 0, 0);
+        builder.vertex(mat, 0, y1, 1).texture(u1, v0).color(r, g, b, a).light(light).normal(-1, 0, 0);
+        builder.vertex(mat, 0, y2, 1).texture(u1, v1).color(r, g, b, a).light(light).normal(-1, 0, 0);
+        builder.vertex(mat, 0, y2, 0).texture(u0, v1).color(r, g, b, a).light(light).normal(-1, 0, 0);
+
+        // 右面
+        builder.vertex(mat, 1, y1, 0).texture(u0, v0).color(r, g, b, a).light(light).normal(1, 0, 0);
+        builder.vertex(mat, 1, y1, 1).texture(u1, v0).color(r, g, b, a).light(light).normal(1, 0, 0);
+        builder.vertex(mat, 1, y2, 1).texture(u1, v1).color(r, g, b, a).light(light).normal(1, 0, 0);
+        builder.vertex(mat, 1, y2, 0).texture(u0, v1).color(r, g, b, a).light(light).normal(1, 0, 0);
+    }
+
+    public static void renderSelectionBoxOutline(
+            MatrixStack matrices,
+            VertexConsumerProvider consumers,
+            TutorialGroupScreen.SelectionBox box,
+            float lineWidth,
+            float r, float g, float b, float a
+    ) {
+        float minX = Math.min(box.x1, box.x2), minY = Math.min(box.y1, box.y2), minZ = Math.min(box.z1, box.z2);
+        float maxX = Math.max(box.x1, box.x2) + 1, maxY = Math.max(box.y1, box.y2) + 1, maxZ = Math.max(box.z1, box.z2) + 1;
+
+        com.mojang.blaze3d.systems.RenderSystem.lineWidth(lineWidth);
+
+        Matrix4f mat = matrices.peek().getPositionMatrix();
+        VertexConsumer builder = consumers.getBuffer(RenderLayer.getLines());
+        //底
+        builder.vertex(mat, minX, minY, minZ).color(r, g, b, a).normal(1, 0, 0);
+        builder.vertex(mat, maxX, minY, minZ).color(r, g, b, a).normal(1, 0, 0);
+
+        builder.vertex(mat, maxX, minY, minZ).color(r, g, b, a).normal(1, 0, 0);
+        builder.vertex(mat, maxX, minY, maxZ).color(r, g, b, a).normal(1, 0, 0);
+
+        builder.vertex(mat, maxX, minY, maxZ).color(r, g, b, a).normal(1, 0, 0);
+        builder.vertex(mat, minX, minY, maxZ).color(r, g, b, a).normal(1, 0, 0);
+
+        builder.vertex(mat, minX, minY, maxZ).color(r, g, b, a).normal(1, 0, 0);
+        builder.vertex(mat, minX, minY, minZ).color(r, g, b, a).normal(1, 0, 0);
+
+        // 顶面
+        builder.vertex(mat, minX, maxY, minZ).color(r, g, b, a).normal(1, 0, 0);
+        builder.vertex(mat, maxX, maxY, minZ).color(r, g, b, a).normal(1, 0, 0);
+
+        builder.vertex(mat, maxX, maxY, minZ).color(r, g, b, a).normal(1, 0, 0);
+        builder.vertex(mat, maxX, maxY, maxZ).color(r, g, b, a).normal(1, 0, 0);
+
+        builder.vertex(mat, maxX, maxY, maxZ).color(r, g, b, a).normal(1, 0, 0);
+        builder.vertex(mat, minX, maxY, maxZ).color(r, g, b, a).normal(1, 0, 0);
+
+        builder.vertex(mat, minX, maxY, maxZ).color(r, g, b, a).normal(1, 0, 0);
+        builder.vertex(mat, minX, maxY, minZ).color(r, g, b, a).normal(1, 0, 0);
+
+        // 竖边
+        builder.vertex(mat, minX, minY, minZ).color(r, g, b, a).normal(0, 1, 0);
+        builder.vertex(mat, minX, maxY, minZ).color(r, g, b, a).normal(0, 1, 0);
+
+        builder.vertex(mat, maxX, minY, minZ).color(r, g, b, a).normal(0, 1, 0);
+        builder.vertex(mat, maxX, maxY, minZ).color(r, g, b, a).normal(0, 1, 0);
+
+        builder.vertex(mat, maxX, minY, maxZ).color(r, g, b, a).normal(0, 1, 0);
+        builder.vertex(mat, maxX, maxY, maxZ).color(r, g, b, a).normal(0, 1, 0);
+
+        builder.vertex(mat, minX, minY, maxZ).color(r, g, b, a).normal(0, 1, 0);
+        builder.vertex(mat, minX, maxY, maxZ).color(r, g, b, a).normal(0, 1, 0);
+    }
 
 
     //private static BlockState state; fuck you java

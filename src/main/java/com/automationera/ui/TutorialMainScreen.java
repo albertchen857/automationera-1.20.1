@@ -26,21 +26,21 @@ public class TutorialMainScreen extends Screen {
                 new ItemStack(Items.IRON_INGOT),
                 Text.translatable("tutorial.group.factory"),
                 startX, y, buttonWidth, 32,
-                btn -> this.client.setScreen(new TutorialGroupScreen("factory",0,1))
+                btn -> this.client.setScreen(new TutorialGroupScreen("factory",0,1, new IsometricRenderState()))
         ));
         // 农场
         this.addDrawableChild(new ItemIconButton(
                 new ItemStack(Items.WHEAT),
                 Text.translatable("tutorial.group.farm"),
                 startX + buttonWidth + spacing, y, buttonWidth, 32,
-                btn -> this.client.setScreen(new TutorialGroupScreen("farm",0,1))
+                btn -> this.client.setScreen(new TutorialGroupScreen("farm",0,1, new IsometricRenderState()))
         ));
         // 特殊
         this.addDrawableChild(new ItemIconButton(
                 new ItemStack(Items.TNT),
                 Text.translatable("tutorial.group.special"),
                 startX + 2 * (buttonWidth + spacing), y, buttonWidth, 32,
-                btn -> this.client.setScreen(new TutorialGroupScreen("special",0,1))
+                btn -> this.client.setScreen(new TutorialGroupScreen("special",0,1, new IsometricRenderState()))
         ));
     }
 
