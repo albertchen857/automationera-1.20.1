@@ -1,14 +1,11 @@
 package com.automationera.ui;
 
 import com.google.gson.Gson;
-import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.systems.VertexSorter;
+import net.fabricmc.fabric.api.client.render.fluid.v1.FluidRenderHandlerRegistry;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
-import net.minecraft.block.Blocks;
 import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.render.*;
 import net.minecraft.client.render.block.BlockRenderManager;
@@ -23,13 +20,12 @@ import net.minecraft.resource.Resource;
 import net.minecraft.resource.ResourceManager;
 import net.minecraft.state.property.Property;
 import net.minecraft.util.Identifier;
+import net.minecraft.util.math.BlockPos;
 import org.joml.Matrix4f;
 import org.joml.Quaternionf;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.util.*;
 
 public class TutorialManager {
@@ -40,7 +36,6 @@ public class TutorialManager {
         ResourceManager rm = MinecraftClient.getInstance().getResourceManager();
         Identifier id = Identifier.of("automationera","tutorial/"+group+"/"+group+"_step"+step+".nbt");
         Resource res = rm.getResource(id).orElse(null);
-        //LOGGER.info("loadNbtFromResource: res={} id={}", res, id);
         if (res == null) return null;
         try (InputStream is = res.getInputStream()) {
             return NbtIo.readCompressed(is, NbtSizeTracker.of(Long.MAX_VALUE));
@@ -68,9 +63,12 @@ public class TutorialManager {
         double maxX = -Double.MAX_VALUE, maxY = -Double.MAX_VALUE, maxZ = -Double.MAX_VALUE;
         for (NbtElement blk : blocks) {
             NbtList pos = ((NbtCompound)blk).getList("pos", NbtElement.INT_TYPE);
-            minX = Math.min(minX, pos.getInt(0)); maxX = Math.max(maxX, pos.getInt(0));
-            minY = Math.min(minY, pos.getInt(1)); maxY = Math.max(maxY, pos.getInt(1));
-            minZ = Math.min(minZ, pos.getInt(2)); maxZ = Math.max(maxZ, pos.getInt(2));
+            minX = Math.min(minX, pos.getInt(0));
+            maxX = Math.max(maxX, pos.getInt(0));
+            minY = Math.min(minY, pos.getInt(1));
+            maxY = Math.max(maxY, pos.getInt(1));
+            minZ = Math.min(minZ, pos.getInt(2));
+            maxZ = Math.max(maxZ, pos.getInt(2));
         }
         double dx = (minX + maxX) / 2.0;
         double dy = (minY + maxY) / 2.0;
@@ -79,16 +77,16 @@ public class TutorialManager {
 
         MatrixStack matrices = new MatrixStack();
         matrices.push();
-        matrices.translate(width / 3f * 2f - 30, height / 8f * 5f + state.yc, 200);
+        matrices.translate(width / 3f * 2f - 30, height / 8f * 5f + state.yc - 30, 200);//position
 
         double nx = (Math.sin(Math.toRadians(state.rotation)) * Math.cos(Math.toRadians(state.pitch))),
                 ny = (-Math.sin(Math.toRadians(state.pitch))),
                 nz = (Math.cos(Math.toRadians(state.rotation)) * Math.cos(Math.toRadians(state.pitch)));
         matrices.multiply(new Quaternionf().rotateX((float) -Math.asin(ny)));
-        matrices.multiply(new Quaternionf().rotateY((float) Math.atan2(nx, nz)));
+        matrices.multiply(new Quaternionf().rotateY((float) Math.atan2(nx, nz)));//Normal Rotation
 
         matrices.scale((float)globalScale, (float)-globalScale, (float)globalScale);
-        matrices.translate(-dx, -dy + 12, -dz);
+        matrices.translate(-dx, -dy, -dz);//center point
 
         RenderSystem.enableDepthTest();
         RenderSystem.depthMask(true);
@@ -113,33 +111,22 @@ public class TutorialManager {
             matrices.push();
             matrices.translate(x, y, z);
 
-            // 1. 渲染固体方块
-            if (!bs.isAir()) {
-                brm.renderBlockAsEntity(bs, matrices, immediate, 15728880, OverlayTexture.DEFAULT_UV);
-            }
+            if (!bs.isAir() && bs.getFluidState().isEmpty()) {
+                brm.renderBlockAsEntity(bs, matrices, immediate, 15728880, OverlayTexture.DEFAULT_UV); //Main render
+            }else if (bs.getFluidState() != null && !bs.getFluidState().isEmpty()) {
+                LOGGER.info("Try rendering fluid");
+                var handler = FluidRenderHandlerRegistry.INSTANCE.get(bs.getFluidState().getFluid());
+                if (handler != null)
+                    handler.renderFluid(
+                            new BlockPos(x, y, z),
+                            mc.world,
+                            immediate.getBuffer(RenderLayer.getTranslucent()),
+                            bs,
+                            bs.getFluidState()
+                    );
 
-            // 2. 渲染液体（只渲染满液体）
-            FluidState fs = bs.getFluidState();
-            if (fs != null && !fs.isEmpty()) {
-                var handler = net.fabricmc.fabric.api.client.render.fluid.v1.FluidRenderHandlerRegistry.INSTANCE.get(fs.getFluid());
-                if (handler != null) {
-                    var sprites = handler.getFluidSprites(mc.world, null, fs);
-                    var color = handler.getFluidColor(mc.world, null, fs);
-                    var sprite = sprites[0];
-                    VertexConsumer vc = immediate.getBuffer(net.minecraft.client.render.RenderLayer.getTranslucent());
-                    int a = (color >> 24) & 0xFF, r = (color >> 16) & 0xFF, g = (color >> 8) & 0xFF, b = (color) & 0xFF;
-                    float minU = sprite.getMinU(), maxU = sprite.getMaxU(), minV = sprite.getMinV(), maxV = sprite.getMaxV();
-                    Matrix4f mat = matrices.peek().getPositionMatrix();
-                    int light = 15728880;
-                    // 关键点：Y坐标根据液体高度调整，兼容流动和残留
-                    float h = fs.getHeight(); // 0~1
-                    vc.vertex(mat, 0, h, 0).color(r, g, b, a).texture(minU, minV).light(light).normal(0, 1, 0);
-                    vc.vertex(mat, 1, h, 0).color(r, g, b, a).texture(maxU, minV).light(light).normal(0, 1, 0);
-                    vc.vertex(mat, 1, h, 1).color(r, g, b, a).texture(maxU, maxV).light(light).normal(0, 1, 0);
-                    vc.vertex(mat, 0, h, 1).color(r, g, b, a).texture(minU, maxV).light(light).normal(0, 1, 0);
-                }
+                LOGGER.info("imm:{},world:{},pos:{},bs:{}",immediate.getBuffer(RenderLayer.getTranslucent()),mc.world,new BlockPos(x, y, z),bs);
             }
-
             matrices.pop();
         }
         immediate.draw();
@@ -182,20 +169,5 @@ public class TutorialManager {
             return state.with(prop, opt.get());
         }
         return state;
-    }
-
-    private static void multiplyMM(float[] result, int rOffset,
-                                   float[] lhs, int lOffset,
-                                   float[] rhs) {
-        // 标准 4x4 矩阵乘法
-        for (int i = 0; i < 4; i++) {
-            for (int j = 0; j < 4; j++) {
-                float sum = 0;
-                for (int k = 0; k < 4; k++) {
-                    sum += lhs[lOffset + k * 4 + i] * rhs[rOffset + j * 4 + k];
-                }
-                result[rOffset + j * 4 + i] = sum;
-            }
-        }
     }
 }

@@ -16,7 +16,7 @@ public class TutorialMainScreen extends Screen {
         int midX = this.width / 2;
         int y = 40;
 
-        int buttonWidth = 60;
+        int buttonWidth = 100;
         int spacing = 32;
         int totalWidth = 3 * buttonWidth + 2 * spacing;
         int startX = midX - totalWidth / 2;
