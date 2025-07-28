@@ -116,7 +116,7 @@ public class TutorialEmiRecipe implements EmiRecipe {
         for (int i = 0; i<=descr.length(); i+=textlen){
             widgets.addText(Text.literal(descr.substring(i, Math.min(descr.length(), i + textlen))), 5, 20 + (i/textlen*8), 0x404040, false);
         }
-        widgets.addTexture(Identifier.of("automationera", "textures/tutorial/" + key + ".png"),
+        widgets.addTexture(Identifier.of("automationera", "textures/rei/tutorial/" + key + ".png"),
                 16, 50,  // 坐标
                 80, 80, // 显示宽高
                 0, 0, // 纹理起始坐标（纹理内偏移）

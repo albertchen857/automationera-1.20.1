@@ -140,7 +140,7 @@ public class MachineEmiRecipe implements EmiRecipe {
             widgets.addText(Text.literal(descr.substring(i, Math.min(descr.length(), i + textlen))), 5, 20 + (i/textlen*8), 0x404040, false);
             //y_inc = i/textlen*8;
         }
-        widgets.addTexture(Identifier.of("automationera", "textures/" + key + ".png"),
+        widgets.addTexture(Identifier.of("automationera", "textures/rei/machine" + key + ".png"),
                 0, 40,  // 坐标
                 96, 96, // 显示宽高
                 0, 0, // 纹理起始坐标（纹理内偏移）
