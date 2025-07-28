@@ -537,7 +537,7 @@ public class Automationera implements ModInitializer {
 		}
 
 		Map<Identifier, Resource> resMap = ((ReloadableResourceManagerImpl) MinecraftClient.getInstance().getResourceManager())
-				.findResources("textures/rei/machines", id -> true);
+				.findResources("textures/rei/machine", id -> true);
 		LOGGER.info("Found machine textures: " + resMap.keySet());
 
 	}

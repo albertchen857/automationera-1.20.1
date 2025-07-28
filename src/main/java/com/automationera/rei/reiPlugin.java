@@ -91,14 +91,13 @@ public class reiPlugin implements REIClientPlugin {
 
     // Utility methods for texture Identifiers (for categories to use)
     public static Identifier getMachineTexture(String machineKey) {
-        machineKey = "bat";
-        return Identifier.of("automationera", "rei/machines/" + machineKey + ".png");
+        return Identifier.of("automationera", "textures/rei/machine/" + machineKey + ".png");
     }
     public static Identifier getVillagerTexture(String job) {
         return Identifier.of("automationera", "textures/rei/villager/" + job + ".png");
     }
     public static Identifier getTutorialTexture(String tutKey) {
-        return Identifier.of("automationera", "rei/tutorial/" + tutKey);
+        return Identifier.of("automationera", "textures/rei/tutorial/" + tutKey + ".png");
     }
     // Utility to open wiki URL (called from category widgets on button click)
     public static void openWiki(String url) {
