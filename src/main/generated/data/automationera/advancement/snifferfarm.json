@@ -4,8 +4,8 @@
     "a1": {
       "conditions": {
         "items": [
-          "minecraft:pitcher_pod",
-          "minecraft:torchflower_seeds"
+          "minecraft:torchflower_seeds",
+          "minecraft:pitcher_pod"
         ],
         "required_stacks": 9
       },

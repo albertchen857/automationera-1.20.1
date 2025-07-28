@@ -21,6 +21,7 @@ import net.minecraft.registry.RegistryWrapper;
 import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
 import net.minecraft.world.World;
+import org.apache.commons.lang3.ObjectUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -45,24 +46,12 @@ public class Advancements{
     private AdvancementEntry furnacegroup;
 
     public void autoRoot(Consumer<AdvancementEntry> consumer){
-        AdvancementEntry rootAdvancement = Advancement.Builder.create()
-                .display(
-                        Items.DIAMOND,
-                        Text.literal("Root Test"),
-                        Text.literal("Should show background"),
-                        Identifier.of("gui/advancements/backgrounds/stone.png"),
-                        AdvancementFrame.TASK,
-                        true, true, false
-                )
-                .criterion("get_diamond", InventoryChangedCriterion.Conditions.items(Items.DIAMOND))
-                .build(consumer, "automationera:root_test");
-
         automaticFactory = Advancement.Builder.create()
                 .display(
                         Items.REDSTONE,
                         Text.translatable("advancements.automaticfactory.title"),
                         Text.translatable("advancements.automaticfactory.descr"),
-                        Identifier.of("textures/gui/advancements/backgrounds/stone.png"),
+                        Identifier.of("automationera","gui/advancements/backgrounds/rs"),
                         AdvancementFrame.TASK,
                         true, true, false
                 )
@@ -228,7 +217,7 @@ public class Advancements{
                         Items.VILLAGER_SPAWN_EGG,
                         Text.translatable("advancements.attribute.title"),
                         Text.translatable("advancements.attribute.descr"),
-                        Identifier.of("gui/advancements/backgrounds/smooth_stone.png"),
+                        Identifier.of("automationera", "gui/advancements/backgrounds/ss"),
                         AdvancementFrame.TASK,
                         true, true, false
                 )
@@ -372,7 +361,7 @@ public class Advancements{
                         Items.BEACON,
                         Text.translatable("advancements.curcuitrevolution.title"),
                         Text.translatable("advancements.curcuitrevolution.descr"),
-                        Identifier.of("gui/advancements/backgrounds/bedrock.png"),
+                        Identifier.of("automationera","gui/advancements/backgrounds/br"),
                         AdvancementFrame.TASK,
                         true, true, false
                 )

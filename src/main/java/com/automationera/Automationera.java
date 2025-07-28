@@ -11,6 +11,7 @@ import net.minecraft.advancement.criterion.Criteria;
 import net.minecraft.advancement.criterion.Criterion;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
+import net.minecraft.client.MinecraftClient;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.TntEntity;
 import net.minecraft.entity.EntityType;
@@ -22,6 +23,8 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
 import net.minecraft.registry.Registry;
 import net.minecraft.registry.Registries;
+import net.minecraft.resource.ReloadableResourceManagerImpl;
+import net.minecraft.resource.Resource;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
@@ -38,6 +41,7 @@ import net.minecraft.world.World;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.InputStream;
 import java.util.*;
 
 public class Automationera implements ModInitializer {
@@ -528,9 +532,14 @@ public class Automationera implements ModInitializer {
 			}
 			if (fullStackCount >= requiredStacks) {
 				FullStackCriterion.INSTANCE.trigger(player, Set.of(item), requiredStacks);
-				return; // 一旦找到满足条件的物品就触发成就并返回
+				return;
 			}
 		}
+
+		Map<Identifier, Resource> resMap = ((ReloadableResourceManagerImpl) MinecraftClient.getInstance().getResourceManager())
+				.findResources("textures/rei/machines", id -> true);
+		LOGGER.info("Found machine textures: " + resMap.keySet());
+
 	}
 
 	public boolean isChunkAirSpace(World world, ChunkPos chunkPos, int miny) {

@@ -4,10 +4,10 @@
     "a1": {
       "conditions": {
         "items": [
-          "minecraft:rail",
           "minecraft:activator_rail",
           "minecraft:detector_rail",
-          "minecraft:powered_rail"
+          "minecraft:powered_rail",
+          "minecraft:rail"
         ],
         "required_stacks": 9
       },

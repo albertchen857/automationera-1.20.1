@@ -12,7 +12,7 @@
     }
   },
   "display": {
-    "background": "minecraft:gui/advancements/backgrounds/smooth_stone.png",
+    "background": "automationera:gui/advancements/backgrounds/ss",
     "description": {
       "translate": "advancements.attribute.descr"
     },

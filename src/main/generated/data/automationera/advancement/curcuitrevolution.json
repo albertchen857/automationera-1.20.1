@@ -12,7 +12,7 @@
     }
   },
   "display": {
-    "background": "minecraft:gui/advancements/backgrounds/bedrock.png",
+    "background": "automationera:gui/advancements/backgrounds/br",
     "description": {
       "translate": "advancements.curcuitrevolution.descr"
     },

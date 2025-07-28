@@ -12,7 +12,7 @@
     }
   },
   "display": {
-    "background": "minecraft:textures/gui/advancements/backgrounds/stone.png",
+    "background": "automationera:gui/advancements/backgrounds/rs",
     "description": {
       "translate": "advancements.automaticfactory.descr"
     },
