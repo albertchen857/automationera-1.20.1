@@ -1011,7 +1011,7 @@ public class OutputRecipe {
                     List.of(new SelectionBox(5,23,9,9,26,21)),
                     List.of(new SelectionBox(5,24,7,9,27,23)),
                     List.of(new SelectionBox(7,23,15,7,23,15))
-            )),
+            ),true),
             new MachineInfo("stone", Items.COBBLESTONE, Text.translatable("tutorial.stone.title"), List.of(
                     List.of(),
                     List.of(new SelectionBox(4,2,1,12,3,10)),
@@ -1020,16 +1020,16 @@ public class OutputRecipe {
                     List.of(new SelectionBox(6,2,5,3,3,3)),
                     List.of(new SelectionBox(6,3,5,3,4,3)),
                     List.of(new SelectionBox(10,10,3,8,12,6))
-            )),
+            ),true),
             new MachineInfo("wood", Items.OAK_LOG, Text.translatable("tutorial.wood.title"), List.of(
                     List.of(),
                     List.of(new SelectionBox(14,3,8,10,5,4)),
                     List.of(new SelectionBox(11,4,12,11,11,0)),
                     List.of(new SelectionBox(10,20,13,14,12,7)),
                     List.of(new SelectionBox(11,18,9,3,21,5))
-            )),
-            new MachineInfo("ice", Items.ICE, Text.translatable("tutorial.ice.title"), List.of()),
-            new MachineInfo("rail", Items.RAIL, Text.translatable("tutorial.rail.title"), List.of())
+            ),true),
+            new MachineInfo("ice", Items.ICE, Text.translatable("tutorial.ice.title"), List.of(),false),
+            new MachineInfo("rail", Items.RAIL, Text.translatable("tutorial.rail.title"), List.of(),false)
     );
     public static final List<MachineInfo> farmMachines = List.of(
             new MachineInfo("mob", Items.ROTTEN_FLESH, Text.translatable("tutorial.mob.title"), List.of(
@@ -1041,13 +1041,13 @@ public class OutputRecipe {
                     List.of(new SelectionBox(34,9,3,4,11,26)),
                     List.of(new SelectionBox(0,12,28,38,13,1)),
                     List.of(new SelectionBox(15,14,20,24,15,10))
-            )),
-            new MachineInfo("pig", Items.COOKED_PORKCHOP, Text.translatable("tutorial.pig.title"), List.of()),
-            new MachineInfo("farm", Items.CARROT, Text.translatable("tutorial.farm.title"), List.of()),
-            new MachineInfo("sugarcane", Items.SUGAR_CANE, Text.translatable("tutorial.sugarcane.title"), List.of()),
-            new MachineInfo("bamboo", Items.BAMBOO, Text.translatable("tutorial.bamboo.title"), List.of())
+            ),true),
+            new MachineInfo("pig", Items.COOKED_PORKCHOP, Text.translatable("tutorial.pig.title"), List.of(),true),
+            new MachineInfo("farm", Items.CARROT, Text.translatable("tutorial.farm.title"), List.of(),true),
+            new MachineInfo("sugarcane", Items.SUGAR_CANE, Text.translatable("tutorial.sugarcane.title"), List.of(),false),
+            new MachineInfo("bamboo", Items.BAMBOO, Text.translatable("tutorial.bamboo.title"), List.of(),false)
     );
     public static final List<MachineInfo> specialMachines = List.of(
-            new MachineInfo("carpet", Items.WHITE_CARPET, Text.translatable("tutorial.carpet.title"), List.of())
+            new MachineInfo("carpet", Items.WHITE_CARPET, Text.translatable("tutorial.carpet.title"), List.of(),true)
     );
 }

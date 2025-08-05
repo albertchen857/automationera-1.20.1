@@ -128,7 +128,7 @@ public class ModKeyBinding {
                 LOGGER.info("Yu key pressed");
                 Screen current = MinecraftClient.getInstance().currentScreen;
                 if (current instanceof TutorialGroupScreen) {
-                    ((TutorialGroupScreen) current).ycKey(2.5f);
+                    ((TutorialGroupScreen) current).ycKey(-2.5f);
                 }
             }
         });
@@ -137,7 +137,7 @@ public class ModKeyBinding {
                 LOGGER.info("Yd key pressed");
                 Screen current = MinecraftClient.getInstance().currentScreen;
                 if (current instanceof TutorialGroupScreen) {
-                    ((TutorialGroupScreen) current).ycKey(-2.5f);
+                    ((TutorialGroupScreen) current).ycKey(2.5f);
                 }
             }
         });

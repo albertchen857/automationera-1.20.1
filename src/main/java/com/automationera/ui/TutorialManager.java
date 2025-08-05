@@ -4,6 +4,7 @@ import com.google.gson.Gson;
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.fabricmc.fabric.api.client.render.fluid.v1.FluidRenderHandlerRegistry;
 import net.minecraft.block.Block;
+import net.minecraft.block.BlockRenderType;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
 import net.minecraft.client.MinecraftClient;
@@ -117,7 +118,8 @@ public class TutorialManager {
 
             Block block = bs.getBlock();
 
-            if (!bs.isAir()) {
+            if (!bs.isAir() || bs.getRenderType() == BlockRenderType.MODEL) {
+                LOGGER.info("{},{},{},{}|{}",block,x,y,z,bs);
                 brm.renderBlockAsEntity(bs, matrices, immediate, 15728880, OverlayTexture.DEFAULT_UV);
             }
             if (!bs.getFluidState().isEmpty()) {
@@ -138,12 +140,14 @@ public class TutorialManager {
                         break;
                     }
                 }
-                boolean isWater = block == Blocks.WATER || isWaterlogged;
+                boolean isWater = (block == Blocks.WATER || isWaterlogged);
                 float fluidHeight = (level == 0) ? 1.0f : (8 - level) / 8.0f;
                 int r = isWater ? 63 : 255;
                 int g = isWater ? 118 : 255;
                 int b = isWater ? 228 : 255;
-                renderFluidCube(matrices, immediate, tex, 0, fluidHeight, 0.9f, r, g, b);
+                if (isWater || block == Blocks.LAVA) {
+                    renderFluidCube(matrices, immediate, tex, 0, fluidHeight, 0.9f, r, g, b);
+                }
             }
             matrices.pop();
         }
