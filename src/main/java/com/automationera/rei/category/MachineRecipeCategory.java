@@ -16,6 +16,8 @@ import net.minecraft.client.resource.language.I18n;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
 import net.minecraft.text.Text;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -23,6 +25,7 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 
 public class MachineRecipeCategory implements DisplayCategory<MachineReiRecipe> {
+    public static final Logger LOGGER = LoggerFactory.getLogger("AutomationEra/REITest");
     @Override
     public CategoryIdentifier<? extends MachineReiRecipe> getCategoryIdentifier() {
         return reiPlugin.MACHINE_CATEGORY_ID;
@@ -72,7 +75,7 @@ public class MachineRecipeCategory implements DisplayCategory<MachineReiRecipe> 
             // Title in red
             widgets.add(Widgets.createLabel(new Point(originX + 30, originY + 5),
                             Text.literal(I18n.translate("emi.automationera.circuit.title")))
-                    .color(0xE71B1B, 0xE71B1B).noShadow());
+                    .color(0xFFE71B1B, 0xFFE71B1B).noShadow());
             // Machine icon image (scaled down)
             widgets.add(Widgets.createTexturedWidget(
                     reiPlugin.ICON_TEXTURE, // Identifier.of("automationera", "icon.png")
@@ -83,7 +86,7 @@ public class MachineRecipeCategory implements DisplayCategory<MachineReiRecipe> 
             for (int i = 0; i <= descr.length(); i += textLen) {
                 String line = descr.substring(i, Math.min(descr.length(), i + textLen));
                 widgets.add(Widgets.createLabel(new Point(originX + 5, originY + 20 + (i / textLen) * 8),
-                        Text.literal(line)).color(0x404040, 0x404040).noShadow().leftAligned());
+                        Text.literal(line)).color(0xFF404040, 0xFF404040).noShadow().leftAligned());
             }
             Widget wikiButton = Widgets.createButton(new Rectangle(originX + 2, originY + 120, 32, 12), Text.literal(""))
                     .text(Text.of("WIKI"))
@@ -98,9 +101,10 @@ public class MachineRecipeCategory implements DisplayCategory<MachineReiRecipe> 
 
         // Standard case for other machines:
         // Title (default color)
+        LOGGER.info("{}|{}",I18n.translate("emi.automationera." + key + ".title"),I18n.translate("emi.automationera." + key + ".descr"));
         widgets.add(Widgets.createLabel(new Point(originX + 5, originY + 5),
                         Text.literal(I18n.translate("emi.automationera." + key + ".title")))
-                .color(0x404040, 0x404040).noShadow().leftAligned());
+                .color(0xFF404040, 0xFF404040).noShadow().leftAligned());
         Widget wikiButton = Widgets.createButton(new Rectangle(originX + 128, originY + 2, 32, 12), Text.literal(""))
                 .text(Text.of("WIKI"))
                 .onClick(button -> {
@@ -118,7 +122,7 @@ public class MachineRecipeCategory implements DisplayCategory<MachineReiRecipe> 
         for (int i = 0; i <= descr.length(); i += textLen) {
             String line = descr.substring(i, Math.min(descr.length(), i + textLen));
             widgets.add(Widgets.createLabel(new Point(originX + 5, originY + 20 + (i / textLen) * 8),
-                    Text.literal(line)).color(0x404040, 0x404040).noShadow().leftAligned());
+                    Text.literal(line)).color(0xFF404040, 0xFF404040).noShadow().leftAligned());
         }
 
         // Compute counts for alternate outputs/inputs if any (from Ing map)
