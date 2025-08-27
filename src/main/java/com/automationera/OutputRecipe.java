@@ -1029,7 +1029,19 @@ public class OutputRecipe {
                     List.of(new SelectionBox(11,18,9,3,21,5))
             ),true),
             new MachineInfo("ice", Items.ICE, Text.translatable("tutorial.ice.title"), List.of(),false),
-            new MachineInfo("rail", Items.RAIL, Text.translatable("tutorial.rail.title"), List.of(),false)
+            new MachineInfo("rail", Items.RAIL, Text.translatable("tutorial.rail.title"), List.of(),false),
+            new MachineInfo("concrete", Items.WHITE_CONCRETE, Text.translatable("tutorial.concrete.title"), List.of(),true),
+            new MachineInfo("furnace", Items.FURNACE, Text.translatable("tutorial.furnace.title"), List.of(
+                    List.of(),
+                    List.of(),
+                    List.of(new SelectionBox(0,2,15,15,3,0),new SelectionBox(9,1,10,11,2,13)),
+                    List.of(new SelectionBox(0,3,15,15,5,0)),
+                    List.of(new SelectionBox(0,4,15,9,9,11)),
+                    List.of(new SelectionBox(4,9,11,2,6,15))
+            ),true),
+            new MachineInfo("hook", Items.TRIPWIRE_HOOK, Text.translatable("tutorial.hook.title"), List.of(),true),
+            new MachineInfo("lantern", Items.JACK_O_LANTERN, Text.translatable("tutorial.lantern.title"), List.of(),true),
+            new MachineInfo("string", Items.STRING, Text.translatable("tutorial.string.title"), List.of(),true)
     );
     public static final List<MachineInfo> farmMachines = List.of(
             new MachineInfo("mob", Items.ROTTEN_FLESH, Text.translatable("tutorial.mob.title"), List.of(
@@ -1045,9 +1057,37 @@ public class OutputRecipe {
             new MachineInfo("pig", Items.COOKED_PORKCHOP, Text.translatable("tutorial.pig.title"), List.of(),true),
             new MachineInfo("farm", Items.CARROT, Text.translatable("tutorial.farm.title"), List.of(),true),
             new MachineInfo("sugarcane", Items.SUGAR_CANE, Text.translatable("tutorial.sugarcane.title"), List.of(),false),
-            new MachineInfo("bamboo", Items.BAMBOO, Text.translatable("tutorial.bamboo.title"), List.of(),false)
+            new MachineInfo("bamboo", Items.BAMBOO, Text.translatable("tutorial.bamboo.title"), List.of(),false),
+            new MachineInfo("bee", Items.HONEYCOMB, Text.translatable("tutorial.bee.title"), List.of(
+                    List.of(),
+                    List.of(),
+                    List.of(new SelectionBox(5,1,4,1,1,8))
+            ),true),
+            new MachineInfo("cactus", Items.CACTUS, Text.translatable("tutorial.cactus.title"), List.of(
+                    List.of(),
+                    List.of(new SelectionBox(2,4,8,8,7,2)),
+                    List.of(new SelectionBox(0,8,10,10,13,0))
+            ),true),
+            //new MachineInfo("flower", Items.WHITE_CARPET, Text.translatable("tutorial.carpet.title"), List.of(),true),
+            new MachineInfo("ocean", Items.PRISMARINE_SHARD, Text.translatable("tutorial.ocean.title"), List.of(
+                    List.of(new SelectionBox(0,10,57,18,22,39),new SelectionBox(0,10,0,18,22,18),new SelectionBox(57,10,0,39,22,18),new SelectionBox(57,10,57,39,22,39)),
+                    List.of(),
+                    List.of(new SelectionBox(18,14,18,0,16,0)),
+                    List.of(new SelectionBox(0,16,18,18,17,0)),
+                    List.of(new SelectionBox(6,17,12,12,53,6)),
+                    List.of(new SelectionBox(6,53,13,12,17,13)),
+                    List.of(new SelectionBox(8,55,14,14,57,6))
+            ),true),
+            new MachineInfo("sheep", Items.WHITE_WOOL, Text.translatable("tutorial.sheep.title"), List.of(),true),
+            new MachineInfo("snow", Items.SNOWBALL, Text.translatable("tutorial.snow.title"), List.of(),true)
     );
     public static final List<MachineInfo> specialMachines = List.of(
-            new MachineInfo("carpet", Items.WHITE_CARPET, Text.translatable("tutorial.carpet.title"), List.of(),true)
+            new MachineInfo("carpet", Items.WHITE_CARPET, Text.translatable("tutorial.carpet.title"), List.of(),true),
+            new MachineInfo("load", Items.MINECART, Text.translatable("tutorial.load.title"), List.of(
+                    List.of(new SelectionBox(3,1,2,3,1,2)),
+                    List.of(),
+                    List.of(),
+                    List.of()
+            ),true)
     );
 }
