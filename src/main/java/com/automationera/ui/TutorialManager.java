@@ -119,7 +119,7 @@ public class TutorialManager {
             Block block = bs.getBlock();
 
             if (!bs.isAir() || bs.getRenderType() == BlockRenderType.MODEL) {
-                LOGGER.info("{},{},{},{}|{}",block,x,y,z,bs);
+                //LOGGER.info("{},{},{},{}|{}",block,x,y,z,bs);
                 brm.renderBlockAsEntity(bs, matrices, immediate, 15728880, OverlayTexture.DEFAULT_UV);
             }
             if (!bs.getFluidState().isEmpty()) {

@@ -1,9 +1,16 @@
 package com.automationera.ui;
 
+import com.mojang.blaze3d.systems.RenderSystem;
+import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.widget.ButtonWidget;
 import net.minecraft.client.gui.widget.NarratedMultilineTextWidget;
 import net.minecraft.client.gui.widget.TextWidget;
+import net.minecraft.client.render.LightmapTextureManager;
+import net.minecraft.client.render.OverlayTexture;
+import net.minecraft.client.render.VertexConsumerProvider;
+import net.minecraft.client.render.item.ItemRenderer;
+import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NbtCompound;
@@ -66,7 +73,7 @@ public class TutorialGroupScreen extends Screen {
             if (blockScroll < 0) blockScroll = 0;
             if (blockScroll > maxScroll) blockScroll = maxScroll;
             return true;
-        } else {
+        } else if (mouseX >= (double) this.width *0.4 && mouseY <= (double) this.height *0.75){
             renderState.addScale(1.0f + (float) (vertical + horizontal) * 0.08f);
         }
         return super.mouseScrolled(mouseX, mouseY, horizontal, vertical);
@@ -95,7 +102,7 @@ public class TutorialGroupScreen extends Screen {
             default -> com.automationera.OutputRecipe.farmMachines;
         };
         int listWidth = this.width / 4;
-        list = new MachineEntryList(client, listWidth, this.height - 40, 40, 20);
+        list = new MachineEntryList(client, listWidth, this.height - 100, 40, 20);
         for (int m = 0; m < choose.size(); m++) {
             int idx = m;
             MachineInfo info = choose.get(m);
@@ -134,34 +141,68 @@ public class TutorialGroupScreen extends Screen {
 
     private void renderBlockList(DrawContext ctx) {
         if (blockList == null || blockList.isEmpty()) return;
+
         int listW = 110, iconSize = 12;
         int x = this.width - listW - 10, y0 = 10, height = BLOCK_LINES * (iconSize + 2);
         ctx.fill(x - 5, y0 - 4, x + listW + 8, y0 + height + 4, 0x40FFFFFF);
+
         int total = blockList.size();
         int maxScroll = Math.max(0, total - BLOCK_LINES);
         float fontSize = 0.75f;
+
+        // === 关键：准备渲染状态 ===
+        MinecraftClient mc = MinecraftClient.getInstance();
+        ItemRenderer ir = mc.getItemRenderer();
+        // 用 ctx 自带或 mc 的 VCP 均可；用一个，循环完再 draw()
+        VertexConsumerProvider.Immediate vcp = mc.getBufferBuilders().getEntityVertexConsumers();
+
+        net.minecraft.client.render.DiffuseLighting.enableGuiDepthLighting();
+
+        // 2. 强制满亮
+        final int FULL_BRIGHT = LightmapTextureManager.pack(15, 15);
+
+        MatrixStack matrices = ctx.getMatrices();
         for (int i = 0; i < BLOCK_LINES && (i + blockScroll) < total; i++) {
             var entry = blockList.get(i + blockScroll);
             int y = y0 + i * (iconSize + 2);
-            ctx.getMatrices().push();
-            ctx.getMatrices().translate(x, y, 0);
-            ctx.getMatrices().scale(iconSize / 16f, iconSize / 16f, iconSize / 16f);
-            ctx.drawItem(entry.stack, 0, 0);
-            ctx.getMatrices().pop();
 
-            ctx.getMatrices().push();
-            ctx.getMatrices().translate(x + iconSize + 6, y + 2, 0);
-            ctx.getMatrices().scale(fontSize, fontSize, 1.0f);
+            // ===== 画物品图标（满亮 + GUI 变换）=====
+            matrices.push();
+            matrices.translate(x, y, 0);
+            matrices.scale(iconSize, iconSize, 200);
+            matrices.scale(1f, -1f, 1f);
+
+            // 用 GUI 变换、传满亮
+            ir.renderItem(
+                    entry.stack,
+                    net.minecraft.client.render.model.json.ModelTransformationMode.GUI,
+                    FULL_BRIGHT,
+                    OverlayTexture.DEFAULT_UV,
+                    matrices, vcp, mc.world, 0
+            );
+            matrices.pop();
+
+            // ===== 画名称 =====
+            matrices.push();
+            matrices.translate(x + iconSize + 6, y + 2, 0);
+            matrices.scale(fontSize, fontSize, 1.0f);
             ctx.drawText(this.textRenderer, entry.displayName, 0, 0, 0x333333, false);
-            ctx.getMatrices().pop();
+            matrices.pop();
 
-            ctx.getMatrices().push();
-            ctx.getMatrices().translate(x + listW - 52, y + 2, 0);
-            ctx.getMatrices().scale(fontSize, fontSize, 1.0f);
+            // ===== 画数量/分组 =====
+            matrices.push();
+            matrices.translate(x + listW - 52, y + 2, 0);
+            matrices.scale(fontSize, fontSize, 1.0f);
             ctx.drawText(this.textRenderer, entry.countBoxGroup(), 0, 0, 0x0077DD, false);
-            ctx.getMatrices().pop();
-
+            matrices.pop();
         }
+
+        // 批量 flush 一次
+        vcp.draw();
+
+        net.minecraft.client.render.DiffuseLighting.disableGuiDepthLighting();
+
+        // ===== 滚动条 =====
         if (maxScroll > 0) {
             int barX = x + listW - 6, barY = y0, barW = 4, barH = height;
             ctx.fill(barX, barY, barX + barW, barY + barH, 0x22000000);
@@ -170,6 +211,7 @@ public class TutorialGroupScreen extends Screen {
             ctx.fill(barX + 1, sliderY, barX + barW - 1, sliderY + sliderH, 0xFFAAAAAA);
         }
     }
+
 
     public void renderUI() {
         this.addDrawableChild(ButtonWidget.builder(Text.translatable("tutorial.ui.prev"),
