@@ -1,5 +1,6 @@
 package com.automationera.ui;
 
+import com.automationera.basic.ExportFile;
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.screen.Screen;
@@ -13,6 +14,7 @@ import net.minecraft.client.render.item.ItemRenderer;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
+import net.minecraft.item.Items;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.text.Text;
 import net.minecraft.client.gui.DrawContext;
@@ -101,8 +103,8 @@ public class TutorialGroupScreen extends Screen {
             case "special" -> com.automationera.OutputRecipe.specialMachines;
             default -> com.automationera.OutputRecipe.farmMachines;
         };
-        int listWidth = this.width / 4;
-        list = new MachineEntryList(client, listWidth, this.height - 100, 40, 20);
+        int listWidth = this.width / 5;
+        list = new MachineEntryList(client, listWidth, this.height - 120, 25, 20);
         for (int m = 0; m < choose.size(); m++) {
             int idx = m;
             MachineInfo info = choose.get(m);
@@ -115,8 +117,8 @@ public class TutorialGroupScreen extends Screen {
         this.addDrawableChild(ButtonWidget.builder(Text.translatable("tutorial.ui.close"),
                         btn -> this.client.setScreen(new TutorialMainScreen()))
                 .dimensions(20, this.height - 30, 60, 20).build());
-        machine = choose.isEmpty() ? null : choose.get(Math.min(selectedMac, choose.size() - 1));
-        TextWidget titleWidget = new TextWidget(2, 20, 200, 20, this.title.copy().append(Text.literal("-")).append(machine.name), this.textRenderer);
+        machine = choose.isEmpty() ? new MachineInfo("NULL",Items.AIR,Text.literal("null"),List.of(),true) : choose.get(Math.min(selectedMac, choose.size() - 1));
+        TextWidget titleWidget = new TextWidget(0, 5, 200, 20, this.title.copy().append(Text.literal("-")).append(machine.name), this.textRenderer);
         this.addDrawableChild(titleWidget);
     }
 
@@ -150,29 +152,27 @@ public class TutorialGroupScreen extends Screen {
         int maxScroll = Math.max(0, total - BLOCK_LINES);
         float fontSize = 0.75f;
 
-        // === 关键：准备渲染状态 ===
         MinecraftClient mc = MinecraftClient.getInstance();
         ItemRenderer ir = mc.getItemRenderer();
-        // 用 ctx 自带或 mc 的 VCP 均可；用一个，循环完再 draw()
         VertexConsumerProvider.Immediate vcp = mc.getBufferBuilders().getEntityVertexConsumers();
 
         net.minecraft.client.render.DiffuseLighting.enableGuiDepthLighting();
+        RenderSystem.enableDepthTest();
+        RenderSystem.enablePolygonOffset();
+        RenderSystem.polygonOffset(-2f, -2f);
 
-        // 2. 强制满亮
         final int FULL_BRIGHT = LightmapTextureManager.pack(15, 15);
-
         MatrixStack matrices = ctx.getMatrices();
+
         for (int i = 0; i < BLOCK_LINES && (i + blockScroll) < total; i++) {
             var entry = blockList.get(i + blockScroll);
             int y = y0 + i * (iconSize + 2);
 
-            // ===== 画物品图标（满亮 + GUI 变换）=====
             matrices.push();
-            matrices.translate(x, y, 0);
-            matrices.scale(iconSize, iconSize, 200);
+            matrices.translate(x + 8.0f, y + 8.0f, 0f);
+            matrices.scale(iconSize, iconSize, 16);
             matrices.scale(1f, -1f, 1f);
 
-            // 用 GUI 变换、传满亮
             ir.renderItem(
                     entry.stack,
                     net.minecraft.client.render.model.json.ModelTransformationMode.GUI,
@@ -182,27 +182,24 @@ public class TutorialGroupScreen extends Screen {
             );
             matrices.pop();
 
-            // ===== 画名称 =====
             matrices.push();
             matrices.translate(x + iconSize + 6, y + 2, 0);
             matrices.scale(fontSize, fontSize, 1.0f);
-            ctx.drawText(this.textRenderer, entry.displayName, 0, 0, 0x333333, false);
+            ctx.drawText(this.textRenderer, entry.displayName, 0, 0, 0xEBEBEB, false);
             matrices.pop();
 
-            // ===== 画数量/分组 =====
             matrices.push();
             matrices.translate(x + listW - 52, y + 2, 0);
             matrices.scale(fontSize, fontSize, 1.0f);
-            ctx.drawText(this.textRenderer, entry.countBoxGroup(), 0, 0, 0x0077DD, false);
+            ctx.drawText(this.textRenderer, entry.countBoxGroup(), 0, 0, 0x6BC1FF, false);
             matrices.pop();
         }
 
-        // 批量 flush 一次
         vcp.draw();
 
+        RenderSystem.disablePolygonOffset();
         net.minecraft.client.render.DiffuseLighting.disableGuiDepthLighting();
 
-        // ===== 滚动条 =====
         if (maxScroll > 0) {
             int barX = x + listW - 6, barY = y0, barW = 4, barH = height;
             ctx.fill(barX, barY, barX + barW, barY + barH, 0x22000000);
@@ -218,6 +215,8 @@ public class TutorialGroupScreen extends Screen {
                 btn -> lastStep()).dimensions(120, this.height - 30, 40, 20).build());
         this.addDrawableChild(ButtonWidget.builder(Text.translatable("tutorial.ui.next"),
                 btn -> nextStep()).dimensions(160, this.height - 30, 40, 20).build());
+        this.addDrawableChild(ButtonWidget.builder(Text.translatable("tutorial.ui.output"),
+                btn -> output()).dimensions(200, this.height - 30, 60, 20).build());
         this.addDrawableChild(ButtonWidget.builder(Text.literal((0f - renderState.pitch) + "P"),
                 btn -> {
                     if (renderState.pitch > -60) renderState.addPitch(15);
@@ -231,6 +230,7 @@ public class TutorialGroupScreen extends Screen {
         NarratedMultilineTextWidget descWidget = new NarratedMultilineTextWidget(180, Text.translatable("tutorial." + machine.id + ".step" + currentStep), this.textRenderer);
         descWidget.setPosition(180, 170);
         this.addDrawableChild(descWidget);
+
     }
 
     public void rotateKey(float delta) {
@@ -277,6 +277,17 @@ public class TutorialGroupScreen extends Screen {
 
     public void resetKey() {
         renderState = new IsometricRenderState();
+    }
+
+    public void output(){
+        List<MachineInfo> choose2 = switch (group) {
+            case "factory" -> com.automationera.OutputRecipe.factoryMachines;
+            case "special" -> com.automationera.OutputRecipe.specialMachines;
+            default -> com.automationera.OutputRecipe.farmMachines;
+        };
+        int max = choose2.get(selectedMac).selectbox.size();
+        LOGGER.info("{}.{}",machine.id,max);
+        ExportFile.exportTutorialFolder(machine.id,max);
     }
 
     public static class MachineInfo {

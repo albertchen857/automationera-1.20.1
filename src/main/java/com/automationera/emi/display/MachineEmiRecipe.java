@@ -3,6 +3,8 @@ package com.automationera.emi.display;
 import com.automationera.OutputRecipe;
 import com.automationera.emi.emiPlugin;
 import com.automationera.emi.recipe.MachineRecipe;
+import com.automationera.ui.IsometricRenderState;
+import com.automationera.ui.TutorialGroupScreen;
 import dev.emi.emi.api.recipe.EmiRecipe;
 import dev.emi.emi.api.recipe.EmiRecipeCategory;
 import dev.emi.emi.api.stack.EmiIngredient;
@@ -27,7 +29,7 @@ public class MachineEmiRecipe implements EmiRecipe {
     private final EmiStack output;
     private final List<Item> allOutputs;
     private final List<Item> allInputs;
-    private final String key; // 机器标识（用于定位纹理和本地化字符串）
+    private final String key; // 机器标识
     private static final Logger LOGGER = LoggerFactory.getLogger("AutomationEra/emi/display/MachineEmiRecipe");
     private final Map<String,List<List<String>>> Ing = new OutputRecipe().OutputIng();
     private final Map<String, List<Item>> Template = new OutputRecipe().OutputTemplate();
@@ -93,8 +95,8 @@ public class MachineEmiRecipe implements EmiRecipe {
 
     @Override
     public void addWidgets(WidgetHolder widgets) {
-        LOGGER.info("out:{}, mac:{}", recipe.output, key);
-        LOGGER.info("[EMI DEBUG] key: {}", key);
+        //LOGGER.info("out:{}, mac:{}", recipe.output, key);
+        //LOGGER.info("[EMI DEBUG] key: {}", key);
         if (allOutputs == null || allInputs == null) {
             LOGGER.error("[EMI ERROR] allOutputs or allInputs is null! key={}", key);
             return;
@@ -123,9 +125,13 @@ public class MachineEmiRecipe implements EmiRecipe {
         }
         widgets.addText(Text.literal(I18n.translate("emi.automationera." + key + ".title")), 5, 5, 0x404040, false);
         String descr = I18n.translate("emi.automationera." + key + ".descr");
-        widgets.addButton(128, 0, 32, 12,0,0, Identifier.of("automationera", "textures/gui/wikibutton.png"), () -> true, (mouseX, mouseY, button) -> {
+        widgets.addButton(107, 0, 32, 12,0,0, Identifier.of("automationera", "textures/gui/wikibutton.png"), () -> true, (mouseX, mouseY, button) -> {
             Util.getOperatingSystem().open(I18n.translate("emi.automationera." + key + ".wiki"));
         });
+        Map<String, List<?>> cm = OutputRecipe.ConvertMap();
+        widgets.addButton(128, 0, 21, 21,32,0, Identifier.of("automationera", "textures/gui/wikibutton.png"), () -> cm.containsKey(key), (mouseX, mouseY, button) -> {
+            MinecraftClient.getInstance().setScreen(new TutorialGroupScreen((String) cm.get(key).getFirst(),(int) cm.get(key).getLast(),1, new IsometricRenderState()))
+        ;});
         int ingOlen = 0;
         int ingIlen = 0;
         if (Ing.containsKey(key)){

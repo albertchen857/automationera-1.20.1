@@ -1090,4 +1090,30 @@ public class OutputRecipe {
                     List.of()
             ),true)
     );
+    public static Map<String,List<?>> ConvertMap(){
+        Map<String,List<?>> cm = new HashMap<>();
+        cm.put("iron",List.of("factory",0));
+        cm.put("stone",List.of("factory",1));
+        cm.put("wood",List.of("factory",2));
+        cm.put("ice",List.of("factory",3));
+        cm.put("rail",List.of("factory",4));
+        cm.put("concrete",List.of("factory",5));
+        cm.put("furnace",List.of("factory",6));
+        cm.put("hook",List.of("factory",7));
+        cm.put("lantern",List.of("factory",8));
+        cm.put("string",List.of("factory",9));
+        cm.put("mob",List.of("farm",0));
+        cm.put("pig",List.of("farm",1));
+        cm.put("farm",List.of("farm",2));
+        cm.put("sugarcane",List.of("farm",3));
+        cm.put("bamboo",List.of("farm",4));
+        cm.put("honey",List.of("farm",5));
+        cm.put("cactus",List.of("farm",6));
+        cm.put("marine",List.of("farm",7));
+        cm.put("sheep",List.of("farm",8));
+        cm.put("snow",List.of("farm",9));
+        cm.put("carpet",List.of("special",0));
+        cm.put("load", List.of("special",1));
+        return cm;
+    }
 }
