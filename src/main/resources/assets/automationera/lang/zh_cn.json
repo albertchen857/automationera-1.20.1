@@ -698,7 +698,7 @@
   "tutorial.ui.prev": "上一个",
   "tutorial.ui.close": "关闭",
   "tutorial.ui.main": "教程主界面",
-  "tutorial.ui.output": "结构导出(.NBT)",
+  "tutorial.ui.output": "投影导出",
   "tutorial.group.factory": "工厂",
   "tutorial.group.farm": "自动农场",
   "tutorial.group.special": "特殊机器",

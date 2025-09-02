@@ -1,7 +1,10 @@
 package com.automationera.ui;
 
+import com.automationera.OutputRecipe;
 import com.automationera.basic.ExportFile;
 import com.mojang.blaze3d.systems.RenderSystem;
+import dev.emi.emi.api.EmiApi;
+import dev.emi.emi.api.recipe.EmiRecipe;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.widget.ButtonWidget;
@@ -18,9 +21,11 @@ import net.minecraft.item.Items;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.text.Text;
 import net.minecraft.client.gui.DrawContext;
+import net.minecraft.util.Identifier;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
+import java.util.Map;
 
 public class TutorialGroupScreen extends Screen {
     private final String group;
@@ -166,6 +171,7 @@ public class TutorialGroupScreen extends Screen {
 
         for (int i = 0; i < BLOCK_LINES && (i + blockScroll) < total; i++) {
             var entry = blockList.get(i + blockScroll);
+            if (entry.stack.equals(new ItemStack(Items.BARRIER))) continue;
             int y = y0 + i * (iconSize + 2);
 
             matrices.push();
@@ -189,9 +195,9 @@ public class TutorialGroupScreen extends Screen {
             matrices.pop();
 
             matrices.push();
-            matrices.translate(x + listW - 52, y + 2, 0);
+            matrices.translate(x + listW - 45, y + 2, 0);
             matrices.scale(fontSize, fontSize, 1.0f);
-            ctx.drawText(this.textRenderer, entry.countBoxGroup(), 0, 0, 0x6BC1FF, false);
+            ctx.drawText(this.textRenderer, entry.countBoxGroup(), 0, 0, 0xFF512C, false);
             matrices.pop();
         }
 
@@ -230,6 +236,8 @@ public class TutorialGroupScreen extends Screen {
         NarratedMultilineTextWidget descWidget = new NarratedMultilineTextWidget(180, Text.translatable("tutorial." + machine.id + ".step" + currentStep), this.textRenderer);
         descWidget.setPosition(180, 170);
         this.addDrawableChild(descWidget);
+        this.addDrawableChild(ButtonWidget.builder(Text.literal("EMI"),
+                btn -> Openpage()).dimensions(360, this.height - 30, 40, 20).build());
 
     }
 
@@ -288,6 +296,22 @@ public class TutorialGroupScreen extends Screen {
         int max = choose2.get(selectedMac).selectbox.size();
         LOGGER.info("{}.{}",machine.id,max);
         ExportFile.exportTutorialFolder(machine.id,max);
+    }
+
+    public void Openpage(){
+        Map<String,List<?>> cm = OutputRecipe.ConvertMap();
+        for (Map.Entry<String,List<?>> entry:cm.entrySet()){
+            LOGGER.info("{}//{}|{}/{}",entry.getKey(),entry.getValue(),group,selectedMac);
+            if (entry.getValue().getFirst().equals(group) && entry.getValue().getLast().equals(selectedMac)){
+                Identifier id = Identifier.of("automationera", "machine_recipe_" + entry.getKey());
+                EmiRecipe recipe = EmiApi.getRecipeManager().getRecipe(id);
+                if (recipe != null) {
+                    EmiApi.displayRecipe(recipe);
+                }else{
+                    LOGGER.warn("No EMI recipe found for id {}", id);
+                }
+            }
+        }
     }
 
     public static class MachineInfo {

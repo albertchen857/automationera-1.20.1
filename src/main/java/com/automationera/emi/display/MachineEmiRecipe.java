@@ -125,11 +125,11 @@ public class MachineEmiRecipe implements EmiRecipe {
         }
         widgets.addText(Text.literal(I18n.translate("emi.automationera." + key + ".title")), 5, 5, 0x404040, false);
         String descr = I18n.translate("emi.automationera." + key + ".descr");
-        widgets.addButton(107, 0, 32, 12,0,0, Identifier.of("automationera", "textures/gui/wikibutton.png"), () -> true, (mouseX, mouseY, button) -> {
+        widgets.addButton(128, 0, 32, 12,0,0, Identifier.of("automationera", "textures/gui/wikibutton.png"), () -> true, (mouseX, mouseY, button) -> {
             Util.getOperatingSystem().open(I18n.translate("emi.automationera." + key + ".wiki"));
         });
         Map<String, List<?>> cm = OutputRecipe.ConvertMap();
-        widgets.addButton(128, 0, 21, 21,32,0, Identifier.of("automationera", "textures/gui/wikibutton.png"), () -> cm.containsKey(key), (mouseX, mouseY, button) -> {
+        widgets.addButton(138, 112, 22, 22,32,0, Identifier.of("automationera", "textures/gui/wikibutton.png"), () -> cm.containsKey(key), (mouseX, mouseY, button) -> {
             MinecraftClient.getInstance().setScreen(new TutorialGroupScreen((String) cm.get(key).getFirst(),(int) cm.get(key).getLast(),1, new IsometricRenderState()))
         ;});
         int ingOlen = 0;
