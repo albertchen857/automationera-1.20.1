@@ -1,6 +1,7 @@
 package com.automationera;
 
 import com.automationera.advance.*;
+import com.automationera.keybinding.ModKeyBinding;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.entity.event.v1.ServerPlayerEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
@@ -221,7 +222,7 @@ public class Automationera implements ModInitializer {
 		ServerTickEvents.START_SERVER_TICK.register(server -> {
 			for (ServerPlayerEntity player : server.getPlayerManager().getPlayerList()) {
 				lastTickStartTime = System.nanoTime();
-				if (server.getTicks() % 36000 == 0){ //10min
+				if (server.getTicks() % 216000 == 0){ //1h
 					BlockPos pos = player.getBlockPos();
 					//LOGGER.info("afk {}/{}/{}",lastpos, new int[]{pos.getX(), pos.getZ()},Arrays.equals(lastpos, new int[]{pos.getX(), pos.getZ()}));
 					if (Arrays.equals(lastpos, new int[]{pos.getX(), pos.getZ()})){
@@ -229,8 +230,8 @@ public class Automationera implements ModInitializer {
 						if (adv != null) {
 							player.getAdvancementTracker().grantCriterion(adv, "afk");
 						}
-						player.sendMessage(Text.literal("You already AFK "+(afkperiod*0.5)+" Hours"));
 						afkperiod+=1;
+						player.sendMessage(Text.literal("You already AFK "+(afkperiod)+" Hours"));
 						afk = true;
 					}else{
 						afkperiod = 0;
@@ -253,17 +254,6 @@ public class Automationera implements ModInitializer {
 							AdvancementEntry adv = server.getAdvancementLoader().get(Identifier.of(MOD_ID+":netherperimeter"));
 							if (adv != null) {
 								player.getAdvancementTracker().grantCriterion(adv, "netherperimeter");
-							}
-						}
-					}else{
-						ServerWorld world = player.getWorld();
-						boolean peaceful = world.getDifficulty() == Difficulty.PEACEFUL;
-						int mobCount = world.getEntitiesByClass(MobEntity.class, new Box(player.getBlockPos()).expand(64), Entity::isAlive).size();
-						long timeOfDay = world.getTimeOfDay() % 24000;
-						if (!peaceful && mobCount == 0 && timeOfDay >= 13000 && timeOfDay <= 23000) {
-							AdvancementEntry adv = server.getAdvancementLoader().get(Identifier.of(MOD_ID+":fakepeaceful"));
-							if (adv != null) {
-								player.getAdvancementTracker().grantCriterion(adv, "fakepeaceful");
 							}
 						}
 					}
@@ -412,7 +402,7 @@ public class Automationera implements ModInitializer {
 						if (adv != null) {
 							player.getAdvancementTracker().grantCriterion(adv, "worldeater");
 						}
-					}else if (entityCount  > 20) {
+					}else if (entityCount  > 100) {
 						AdvancementEntry adv = server.getAdvancementLoader().get(Identifier.of(MOD_ID+":tntquarry"));
 						if (adv != null) {
 							player.getAdvancementTracker().grantCriterion(adv, "tntquarry");
@@ -480,7 +470,6 @@ public class Automationera implements ModInitializer {
 
 
 	}
-
 
 	private void checkPlayerStacks(ServerPlayerEntity player, Item item, int requiredStacks) {
 		int fullStackCount = 0;

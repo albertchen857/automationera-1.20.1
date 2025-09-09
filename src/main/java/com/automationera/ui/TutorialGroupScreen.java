@@ -3,6 +3,7 @@ package com.automationera.ui;
 import com.automationera.OutputRecipe;
 import com.automationera.basic.ExportFile;
 
+import com.mojang.blaze3d.opengl.GlStateManager;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.widget.ButtonWidget;
@@ -162,9 +163,9 @@ public class TutorialGroupScreen extends Screen {
         VertexConsumerProvider.Immediate vcp = mc.getBufferBuilders().getEntityVertexConsumers();
 
         //net.minecraft.client.render.DiffuseLighting.enableGuiDepthLighting();
-        //RenderSystem.enableDepthTest();
-        //RenderSystem.enablePolygonOffset();
-        //RenderSystem.polygonOffset(-2f, -2f);
+        GlStateManager._enableDepthTest();
+        GlStateManager._enablePolygonOffset();
+        GlStateManager._polygonOffset(-2f, -2f);
 
         final int FULL_BRIGHT = LightmapTextureManager.pack(15, 15);
         Matrix3x2fStack m2d = ctx.getMatrices();

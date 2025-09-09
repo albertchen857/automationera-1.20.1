@@ -18,7 +18,7 @@ import java.util.Map;
 public class ExportFile {
     public static Path ensureAutomationEraDir() throws IOException {
         Path gameDir = FabricLoader.getInstance().getGameDir();
-        String ver = SharedConstants.getGameVersion().getName();
+        String ver = SharedConstants.getGameVersion().name();
         Path dir = gameDir.resolve("schematics").resolve("AutomationEra");
         Files.createDirectories(dir);
         return dir;

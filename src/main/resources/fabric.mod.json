@@ -18,6 +18,9 @@
 		"main": [
 			"com.automationera.Automationera"
 		],
+		"client": [
+			"com.automationera.AutomationeraClient"
+		],
 		"fabric-datagen": [
 			"com.automationera.AutomationeraDataGenerator"
 		],

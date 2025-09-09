@@ -1,8 +1,13 @@
 package com.automationera.ui;
 
 import com.google.gson.Gson;
+import com.mojang.blaze3d.buffers.GpuBuffer;
+import com.mojang.blaze3d.buffers.GpuBufferSlice;
+import com.mojang.blaze3d.buffers.Std140Builder;
+import com.mojang.blaze3d.opengl.GlStateManager;
+import com.mojang.blaze3d.systems.GpuDevice;
 import com.mojang.blaze3d.systems.RenderSystem;
-import net.fabricmc.fabric.api.client.render.fluid.v1.FluidRenderHandlerRegistry;
+import com.mojang.blaze3d.textures.GpuTextureView;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockRenderType;
 import net.minecraft.block.BlockState;
@@ -14,23 +19,25 @@ import net.minecraft.client.render.block.BlockRenderManager;
 
 import net.minecraft.client.texture.Sprite;
 import net.minecraft.client.texture.SpriteAtlasTexture;
+import net.minecraft.client.texture.atlas.Atlases;
 import net.minecraft.client.util.math.MatrixStack;
-import net.minecraft.fluid.FluidState;
-import net.minecraft.fluid.Fluids;
-import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.*;
 import net.minecraft.registry.Registries;
 import net.minecraft.resource.Resource;
 import net.minecraft.resource.ResourceManager;
 import net.minecraft.state.property.Property;
 import net.minecraft.util.Identifier;
-import net.minecraft.util.math.BlockPos;
 import org.joml.Matrix4f;
 import org.joml.Quaternionf;
+import org.joml.Vector3f;
+import org.lwjgl.system.MemoryStack;
 import org.slf4j.Logger;
 
 import java.io.InputStream;
+import java.nio.ByteBuffer;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
 public class TutorialManager {
     private static final Logger LOGGER = org.slf4j.LoggerFactory.getLogger("AutomationEraTutorial");
@@ -58,21 +65,26 @@ public class TutorialManager {
         BlockRenderManager brm = mc.getBlockRenderManager();
 
         List<BlockState> palette = new ArrayList<>();
-        for (NbtElement e : nbt.getList("palette", NbtElement.COMPOUND_TYPE))
-            palette.add(readBlockStateFromNbt((NbtCompound)e));
+        Optional<NbtList> optn = nbt.getList("palette");
+        optn.ifPresent(nbtElements -> {
+            for (int i = 0; i < optn.stream().count(); i++)
+                palette.add(readBlockStateFromNbt(optn.get().getCompoundOrEmpty(i)));
+        });
 
-        var blocks = nbt.getList("blocks", NbtElement.COMPOUND_TYPE);
+
+        Optional<NbtList> blocks = nbt.getList("blocks");
 
         double minX = Double.MAX_VALUE, minY = Double.MAX_VALUE, minZ = Double.MAX_VALUE;
         double maxX = -Double.MAX_VALUE, maxY = -Double.MAX_VALUE, maxZ = -Double.MAX_VALUE;
-        for (NbtElement blk : blocks) {
-            NbtList pos = ((NbtCompound)blk).getList("pos", NbtElement.INT_TYPE);
-            minX = Math.min(minX, pos.getInt(0));
-            maxX = Math.max(maxX, pos.getInt(0));
-            minY = Math.min(minY, pos.getInt(1));
-            maxY = Math.max(maxY, pos.getInt(1));
-            minZ = Math.min(minZ, pos.getInt(2));
-            maxZ = Math.max(maxZ, pos.getInt(2));
+        for (int i = 0; i < blocks.stream().count(); i++) {
+            NbtCompound blk = blocks.get().getCompoundOrEmpty(i);
+            Optional<NbtList> pos = blk.getList("pos");
+            minX = Math.min(minX, pos.get().indexOf(0));
+            maxX = Math.max(maxX, pos.get().indexOf(0));
+            minY = Math.min(minY, pos.get().indexOf(1));
+            maxY = Math.max(maxY, pos.get().indexOf(1));
+            minZ = Math.min(minZ, pos.get().indexOf(2));
+            maxZ = Math.max(maxZ, pos.get().indexOf(2));
         }
         double dx = (minX + maxX) / 2.0;
         double dy = (minY + maxY) / 2.0;
@@ -92,25 +104,37 @@ public class TutorialManager {
         matrices.scale((float)globalScale, (float)-globalScale, (float)globalScale);
         matrices.translate(-dx, -dy, -dz);//center point
 
-        RenderSystem.enableDepthTest();
-        RenderSystem.depthMask(true);
-        RenderSystem.enableCull();
-        RenderSystem.enableBlend();
-        RenderSystem.defaultBlendFunc();
-        RenderSystem.setShaderLights(
-                new org.joml.Vector3f(0.2f, 1.0f, -0.7f).normalize(),
-                new org.joml.Vector3f(-0.2f, 1.0f, 0.7f).normalize()
-        );
+        GlStateManager._enableDepthTest();
+        GlStateManager._depthMask(true);
+        GlStateManager._enableCull();
+        GlStateManager._enableBlend();
+        try (MemoryStack stack = MemoryStack.stackPush()) {
+            ByteBuffer buf = stack.malloc(32);
+            Std140Builder b = Std140Builder.intoBuffer(buf);
+            b.putVec3(new Vector3f(0.2f, 1.0f, -0.7f).normalize()).align(16)
+                    .putVec3(new Vector3f(-0.2f, 1.0f, 0.7f).normalize()).align(16);
+            buf.flip();
+
+            GpuDevice device = RenderSystem.getDevice();
+            GpuBuffer ubo = device.createBuffer(() -> "light_dirs",
+                    GpuBuffer.USAGE_UNIFORM, buf);
+            GpuBufferSlice slice = ubo.slice();
+            RenderSystem.setShaderLights(slice);
+        }
 
         VertexConsumerProvider.Immediate immediate = mc.getBufferBuilders().getEntityVertexConsumers();
 
-        for (NbtElement blk : blocks) {
-            NbtCompound tag = (NbtCompound) blk;
-            NbtList pos = tag.getList("pos", NbtElement.INT_TYPE);
-            int x = pos.getInt(0), y = pos.getInt(1), z = pos.getInt(2);
-            int idx = tag.getInt("state");
-            if (idx < 0 || idx >= palette.size()) continue;
-            BlockState bs = palette.get(idx);
+        for (int i = 0; i < blocks.stream().count(); i++) {
+            NbtCompound blk = blocks.get().getCompoundOrEmpty(i);
+            Optional<NbtList> pos = blk.getList("pos");
+            int x = pos.get().indexOf(0), y = pos.get().indexOf(1), z = pos.get().indexOf(2);
+            Optional<Integer> Oidx = blk.getInt("state");
+            AtomicInteger idx = new AtomicInteger();
+            Oidx.ifPresent(a -> {
+                idx.set(a);
+            });
+            if (idx.get() < 0 || idx.get() >= palette.size()) continue;
+            BlockState bs = palette.get(idx.get());
 
             matrices.push();
             matrices.translate(x, y, z);
@@ -159,10 +183,10 @@ public class TutorialManager {
         }
         immediate.draw();
 
-        RenderSystem.depthMask(false);
-        RenderSystem.disableDepthTest();
-        RenderSystem.disableCull();
-        RenderSystem.disableBlend();
+        GlStateManager._depthMask(false);
+        GlStateManager._disableDepthTest();
+        GlStateManager._disableCull();
+        GlStateManager._disableBlend();
 
         matrices.pop();
     }
@@ -178,14 +202,15 @@ public class TutorialManager {
         float v0 = sprite.getMinV();
         float v1 = sprite.getMaxV();
 
-        RenderSystem.enableBlend();
-        RenderSystem.disableCull();
-        RenderSystem.defaultBlendFunc();
-        RenderSystem.setShaderTexture(0, SpriteAtlasTexture.BLOCK_ATLAS_TEXTURE);
-        RenderSystem.setShaderColor(1, 1, 1, alpha);
+        GlStateManager._enableBlend();
+        GlStateManager._disableCull();
+        GpuTextureView view = MinecraftClient.getInstance()
+                .getBakedModelManager()
+                .getAtlas(Atlases.BLOCKS).getGlTextureView();
+        RenderSystem.setShaderTexture(0, view);
 
         Matrix4f mat = matrices.peek().getPositionMatrix();
-        VertexConsumer builder = consumers.getBuffer(RenderLayer.getTranslucent());
+        VertexConsumer builder = consumers.getBuffer(RenderLayer.getGlintTranslucent());
 
         int a = Math.round(255 * alpha);
         int light = 0xF000F0;
@@ -284,21 +309,23 @@ public class TutorialManager {
 
     //private static BlockState state; fuck you java
     public static BlockState readBlockStateFromNbt(NbtCompound compound) {
-        Identifier id = Identifier.tryParse(compound.getString("Name"));
+        Identifier id = Identifier.tryParse(String.valueOf(compound.getString("Name")));
         Block block = Registries.BLOCK.get(id);
-        BlockState state = block.getDefaultState();
+        AtomicReference<BlockState> state = new AtomicReference<>(block.getDefaultState());
 
-        if (compound.contains("Properties", NbtElement.COMPOUND_TYPE)) {
-            NbtCompound props = compound.getCompound("Properties");
-            for (String key : props.getKeys()) {
-                String value = props.getString(key);
-                Property<?> prop = block.getStateManager().getProperty(key);
-                if (prop != null) {
-                    state = setProperty(state, prop, value);
+        if (compound.contains("Properties")) {
+            Optional<NbtCompound> Oprops = compound.getCompound("Properties");
+            Oprops.ifPresent(props->{
+                for (String key : props.getKeys()) {
+                    String value = String.valueOf(props);
+                    Property<?> prop = block.getStateManager().getProperty(key);
+                    if (prop != null) {
+                        state.set(setProperty(state.get(), prop, value));
+                    }
                 }
-            }
+            });
         }
-        return state;
+        return state.get();
     }
 
     // 用一个泛型辅助方法明确类型

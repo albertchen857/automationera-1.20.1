@@ -53,7 +53,6 @@ public class AnalysisList {
         }
     }
 
-    // 普通单步统计
     public AnalysisList(NbtCompound nbt) {
         this.result = toEntryList(statItem(nbt));
     }
