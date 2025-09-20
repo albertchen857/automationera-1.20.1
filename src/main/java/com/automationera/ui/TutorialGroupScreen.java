@@ -136,7 +136,7 @@ public class TutorialGroupScreen extends Screen {
         super.render(ctx, mouseX, mouseY, delta);
         if (machine != null) {
             structureNbt = TutorialManager.loadNbtFromResource(machine.id, currentStep);
-            TutorialManager.renderStructure3D(this, structureNbt, currentStep, renderState, width, height, width, machine.selectbox);
+            TutorialManager.renderStructure3D(structureNbt, currentStep, renderState, width, height, width, machine.selectbox);
             if (blockListExternal != null) {
                 blockList = blockListExternal; //execute
             } else if (blockList == null || !structureNbt.equals(blockListNbtCache)) {
@@ -144,8 +144,8 @@ public class TutorialGroupScreen extends Screen {
                 blockListNbtCache = structureNbt == null ? null : structureNbt.copy();
             } else{
                 //BE = NULL, BL != BULL, StructNBT = null, structnbt=blockListNbtCache
-                LOGGER.warn("TGS146: BLE:{}\nBL:{}", blockListNbtCache, blockList);
-                LOGGER.warn("TGS146: Struct:{}", structureNbt);
+                //LOGGER.warn("TGS146: BLE:{}\nBL:{}", blockListNbtCache, blockList.toArray());
+                //LOGGER.warn("TGS146: Struct:{}", structureNbt);
             }
             renderBlockList(ctx);
         }
@@ -158,7 +158,6 @@ public class TutorialGroupScreen extends Screen {
             LOGGER.warn("Render BlockList Null");
             return;
         }
-        LOGGER.debug(blockList.toString());
 
         int listW = 110, iconSize = 12;
         int x = this.width - listW - 10, y0 = 10, height = BLOCK_LINES * (iconSize + 2);
@@ -166,67 +165,16 @@ public class TutorialGroupScreen extends Screen {
 
         int total = blockList.size();
         int maxScroll = Math.max(0, total - BLOCK_LINES);
-        float fontSize = 0.75f;
-
-        MinecraftClient mc = MinecraftClient.getInstance();
-        ItemRenderer ir = mc.getItemRenderer();
-        VertexConsumerProvider.Immediate vcp = mc.getBufferBuilders().getEntityVertexConsumers();
-        //net.minecraft.client.render.DiffuseLighting.enableGuiDepthLighting();
-
-
-        final int FULL_BRIGHT = LightmapTextureManager.pack(15, 15);
-        Matrix3x2fStack m2d = ctx.getMatrices();
-        MatrixStack m3d = new MatrixStack();
-
-        GlStateManager._enableDepthTest();
-        GlStateManager._enablePolygonOffset();
-        GlStateManager._polygonOffset(-2f, -2f);
-
         for (int i = 0; i < BLOCK_LINES && (i + blockScroll) < total; i++) {
-            var entry = blockList.get(i + blockScroll);
-            if (entry.stack.isOf(Items.BARRIER)) continue;
+            AnalysisList.Entry entry = blockList.get(i + blockScroll);
+            if (entry.stack.isOf(Items.BARRIER)) {
+                i--;
+                continue;
+            }
+
             int y = y0 + i * (iconSize + 2);
-
-            m3d.push();
-            m3d.translate(x + 8.0f, y + 8.0f, 0f);
-            m3d.scale(iconSize, iconSize, 16);
-            m3d.scale(1f, -1f, 1f);
-
-            ir.renderItem(
-                    entry.stack,
-                    ItemDisplayContext.GUI,
-                    FULL_BRIGHT,
-                    OverlayTexture.DEFAULT_UV,
-                    m3d, vcp, mc.world, 0
-            );
-            m3d.pop();
+            drawRow(ctx, x, y, listW, iconSize / 16f, entry, iconSize);
         }
-
-        vcp.draw();
-        GlStateManager._polygonOffset(-2f, -2f);
-        GlStateManager._disablePolygonOffset();
-        GlStateManager._disableDepthTest();
-
-        for (int i = 0; i < BLOCK_LINES && (i + blockScroll) < total; i++) {
-            var entry = blockList.get(i + blockScroll);
-            if (entry.stack.isOf(Items.BARRIER)) continue;
-            int y = y0 + i * (iconSize + 2);
-
-            // 名称
-            m2d.pushMatrix();
-            m2d.translate(x + iconSize + 6, y + 2);
-            m2d.scale(fontSize, fontSize);
-            ctx.drawText(this.textRenderer, entry.displayName, 0, 0, 0xFFEBEBEB, false); // ARGB：FF 不透明
-            m2d.popMatrix();
-
-            // 数量
-            m2d.pushMatrix();
-            m2d.translate(x + listW - 45, y + 2);
-            m2d.scale(fontSize, fontSize);
-            ctx.drawText(this.textRenderer, entry.countBoxGroup(), 0, 0, 0xFFFF512C, false); // ARGB：FF 不透明
-            m2d.popMatrix();
-        }
-
 
         if (maxScroll > 0) {
             int barX = x + listW - 6, barW = 4; //y0=barY, height=barH
@@ -237,6 +185,27 @@ public class TutorialGroupScreen extends Screen {
         }
     }
 
+    private void drawRow(DrawContext ctx, int x, int y, int listW, float scale, AnalysisList.Entry entry, int iconSize) {
+        var m2d = ctx.getMatrices();
+        m2d.pushMatrix();
+        m2d.translate(x + 1, y + 1);
+        m2d.scale(scale, scale);
+        ctx.drawItem(entry.stack, 0, 0);
+        m2d.popMatrix();
+
+        m2d.pushMatrix();
+        m2d.translate(x + iconSize + 6, y + 2);
+        m2d.scale(0.75f, 0.75f);
+        ctx.drawText(this.textRenderer, entry.displayName, 0, 0, 0xFFEBEBEB, false); // ARGB 不透明
+        m2d.popMatrix();
+
+        String countText = entry.countBoxGroup();
+        m2d.pushMatrix();
+        m2d.translate(x + listW - 45, y + 2);
+        m2d.scale(0.75f, 0.75f);
+        ctx.drawText(this.textRenderer, countText, 0, 0, 0xFFFF512C, false);
+        m2d.popMatrix();
+    }
 
     public void renderUI() {
         this.addDrawableChild(ButtonWidget.builder(Text.translatable("tutorial.ui.prev"),

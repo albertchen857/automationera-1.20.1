@@ -54,7 +54,7 @@ public class TutorialManager {
         }
     }
 
-    public static void renderStructure3D(Screen screen, NbtCompound nbt,int step, IsometricRenderState state, int width, int height, int size, List<List<TutorialGroupScreen.SelectionBox>> SelectBox) {
+    public static void renderStructure3D(NbtCompound nbt,int step, IsometricRenderState state, int width, int height, int size, List<List<TutorialGroupScreen.SelectionBox>> SelectBox) {
         if (nbt == null || !nbt.contains("palette") || !nbt.contains("blocks")) {
             LOGGER.warn("renderStructure3D: NBT invalid");
             return;
@@ -65,25 +65,23 @@ public class TutorialManager {
         List<BlockState> palette = new ArrayList<>();
         Optional<NbtList> optn = nbt.getList("palette");
         optn.ifPresent(nbtElements -> {
-            for (int i = 0; i < optn.stream().count(); i++)
+            for (int i = 0; i < optn.get().size(); i++)
                 palette.add(readBlockStateFromNbt(optn.get().getCompoundOrEmpty(i)));
         });
 
-        Optional<NbtList> blocks = nbt.getList("blocks");
+        NbtList blocks = nbt.getList("blocks").orElse(new NbtList());
 
         double minX = Double.MAX_VALUE, minY = Double.MAX_VALUE, minZ = Double.MAX_VALUE;
         double maxX = -Double.MAX_VALUE, maxY = -Double.MAX_VALUE, maxZ = -Double.MAX_VALUE;
-        for (int i = 0; i < blocks.stream().count(); i++) {
-            NbtCompound blk = blocks.get().getCompoundOrEmpty(i);
-            Optional<NbtList> pos = blk.getList("pos");
-            if(pos.isPresent()){
-                minX = Math.min(minX, pos.get().indexOf(0));
-                maxX = Math.max(maxX, pos.get().indexOf(0));
-                minY = Math.min(minY, pos.get().indexOf(1));
-                maxY = Math.max(maxY, pos.get().indexOf(1));
-                minZ = Math.min(minZ, pos.get().indexOf(2));
-                maxZ = Math.max(maxZ, pos.get().indexOf(2));
-            }
+        for (int i = 0; i < blocks.size(); i++) {
+            NbtCompound blk = blocks.getCompoundOrEmpty(i);
+            NbtList pos = blk.getList("pos").orElse(new NbtList());
+            minX = Math.min(minX, pos.getInt(0).orElse(0));
+            maxX = Math.max(maxX, pos.getInt(0).orElse(0));
+            minY = Math.min(minY, pos.getInt(1).orElse(0));
+            maxY = Math.max(maxY, pos.getInt(1).orElse(0));
+            minZ = Math.min(minZ, pos.getInt(2).orElse(0));
+            maxZ = Math.max(maxZ, pos.getInt(2).orElse(0));
         }
         double dx = (minX + maxX) / 2.0;
         double dy = (minY + maxY) / 2.0;
@@ -123,54 +121,53 @@ public class TutorialManager {
 
         VertexConsumerProvider.Immediate immediate = mc.getBufferBuilders().getEntityVertexConsumers();
 
-        for (int i = 0; i < blocks.stream().count(); i++) {
-            NbtCompound blk = blocks.get().getCompoundOrEmpty(i);
-            Optional<NbtList> pos = blk.getList("pos");
-            if(pos.isPresent()){
-                int x = pos.get().indexOf(0), y = pos.get().indexOf(1), z = pos.get().indexOf(2);
-                Optional<Integer> idx = blk.getInt("state");
-                if(idx.isPresent()){
-                    if (idx.get() < 0 || idx.get() >= palette.size()) continue;
-                    BlockState bs = palette.get(idx.get());
+        for (int i = 0; i < blocks.size(); i++) {
+            NbtCompound blk = blocks.getCompoundOrEmpty(i);
+            NbtList pos = blk.getList("pos").orElse(new NbtList());
+            int x = pos.getInt(0).orElse(0), y = pos.getInt(1).orElse(0), z = pos.getInt(2).orElse(0);
+            Optional<Integer> idx = blk.getInt("state");
+            if(idx.isPresent()){
+                if (idx.get() < 0 || idx.get() >= palette.size()) continue;
+                BlockState bs = palette.get(idx.get());
 
-                    matrices.push();
-                    matrices.translate(x, y, z);
-                    Block block = bs.getBlock();
+                matrices.push();
+                matrices.translate(x, y, z);
+                Block block = bs.getBlock();
 
-                    if (!bs.isAir() || bs.getRenderType() == BlockRenderType.MODEL) {
-                        //LOGGER.info("{},{},{},{}|{}",block,x,y,z,bs);
-                        brm.renderBlockAsEntity(bs, matrices, immediate, 15728880, OverlayTexture.DEFAULT_UV);
-                    }
-                    if (!bs.getFluidState().isEmpty()) {
-                        boolean isWaterlogged = false;
-                        int level = 0;
-                        Identifier tex = block == Blocks.LAVA
-                                ? Identifier.of("minecraft", "block/lava_still")
-                                : Identifier.of("minecraft", "block/water_still");
-                        for (Property<?> prop : bs.getProperties()) {
-                            if (prop.getName().equals("waterlogged") && bs.get(prop).toString().equals("true")) {
-                                isWaterlogged = true;
-                                break;
-                            }
-                        }
-                        for (Property<?> prop : bs.getProperties()) {
-                            if (prop.getName().toLowerCase().contains("level")) {
-                                level = Integer.parseInt(bs.get(prop).toString());
-                                break;
-                            }
-                        }
-                        boolean isWater = (block == Blocks.WATER || isWaterlogged);
-                        float fluidHeight = (level == 0) ? 1.0f : (8 - level) / 8.0f;
-                        int r = isWater ? 63 : 255;
-                        int g = isWater ? 118 : 255;
-                        int b = isWater ? 228 : 255;
-                        if (isWater || block == Blocks.LAVA) {
-                            renderFluidCube(matrices, immediate, tex, 0, fluidHeight, 0.9f, r, g, b);
-                        }
-                    }
-                    matrices.pop();
+                if (!bs.isAir() || bs.getRenderType() == BlockRenderType.MODEL) {
+                    //LOGGER.info("{},{},{},{}|{}",block,x,y,z,bs);
+                    brm.renderBlockAsEntity(bs, matrices, immediate, 15728880, OverlayTexture.DEFAULT_UV);
                 }
-            };
+                if (!bs.getFluidState().isEmpty()) {
+                    boolean isWaterlogged = false;
+                    int level = 0;
+                    Identifier tex = block == Blocks.LAVA
+                            ? Identifier.of("minecraft", "block/lava_still")
+                            : Identifier.of("minecraft", "block/water_still");
+                    for (Property<?> prop : bs.getProperties()) {
+                        if (prop.getName().equals("waterlogged") && bs.get(prop).toString().equals("true")) {
+                            isWaterlogged = true;
+                            break;
+                        }
+                    }
+                    for (Property<?> prop : bs.getProperties()) {
+                        if (prop.getName().toLowerCase().contains("level")) {
+                            level = Integer.parseInt(bs.get(prop).toString());
+                            break;
+                        }
+                    }
+                    boolean isWater = (block == Blocks.WATER || isWaterlogged);
+                    float fluidHeight = (level == 0) ? 1.0f : (8 - level) / 8.0f;
+                    int r = isWater ? 63 : 255;
+                    int g = isWater ? 118 : 255;
+                    int b = isWater ? 228 : 255;
+                    if (isWater || block == Blocks.LAVA) {
+                        renderFluidCube(matrices, immediate, tex, 0, fluidHeight, 0.9f, r, g, b);
+                    }
+                }
+                matrices.pop();
+            }
+
         }
         if (SelectBox != null && step-1 < SelectBox.size()) {
             long time = System.currentTimeMillis();

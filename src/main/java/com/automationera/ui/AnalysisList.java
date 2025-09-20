@@ -63,14 +63,16 @@ public class AnalysisList {
         Optional<NbtList> palette = nbt.getList("palette");
         if(palette.isEmpty()) return map;
         Optional<NbtList> blocks = nbt.getList("blocks");
-        for (int i = 0; i < blocks.stream().count(); i++) {
-            NbtCompound blk = blocks.get().getCompoundOrEmpty(i);
-            int id = blk.getInt("state").orElse(0);
-            String blockId = palette.get().getCompoundOrEmpty(id).getString("Name").orElse("");
-            var block = Registries.BLOCK.get(Identifier.of(blockId));
-            var item = block.asItem();
-            if (item != null && !item.equals(net.minecraft.item.Items.AIR)) {
-                map.put(item, map.getOrDefault(item, 0) + 1);
+        if (blocks.isPresent()){
+            for (int i = 0; i < blocks.get().size(); i++) {
+                NbtCompound blk = blocks.get().getCompoundOrEmpty(i);
+                int id = blk.getInt("state").orElse(0);
+                String blockId = palette.get().getCompoundOrEmpty(id).getString("Name").orElse("");
+                var block = Registries.BLOCK.get(Identifier.of(blockId));
+                var item = block.asItem();
+                if (item != null && !item.equals(net.minecraft.item.Items.AIR)) {
+                    map.put(item, map.getOrDefault(item, 0) + 1);
+                }
             }
         }
         return map;
