@@ -115,7 +115,9 @@ public class TutorialGroupScreen extends Screen {
             int idx = m;
             MachineInfo info = choose.get(m);
             list.addEntry(idx, new ItemStack(info.icon), info.name, () -> {
-                this.client.setScreen(new TutorialGroupScreen(group, idx, 1, renderState, blockListExternal));
+                if (this.client != null) {
+                    this.client.setScreen(new TutorialGroupScreen(group, idx, 1, renderState, blockListExternal));
+                }
             });
         }
         list.selectByIndex(selectedMac);
@@ -136,10 +138,14 @@ public class TutorialGroupScreen extends Screen {
             structureNbt = TutorialManager.loadNbtFromResource(machine.id, currentStep);
             TutorialManager.renderStructure3D(this, structureNbt, currentStep, renderState, width, height, width, machine.selectbox);
             if (blockListExternal != null) {
-                blockList = blockListExternal;
-            } else if (blockList == null || blockListNbtCache == null || !structureNbt.equals(blockListNbtCache)) {
-                blockList = new AnalysisList(structureNbt).getResult();
+                blockList = blockListExternal; //execute
+            } else if (blockList == null || !structureNbt.equals(blockListNbtCache)) {
+                blockList = new AnalysisList(structureNbt).getResult(); //null
                 blockListNbtCache = structureNbt == null ? null : structureNbt.copy();
+            } else{
+                //BE = NULL, BL != BULL, StructNBT = null, structnbt=blockListNbtCache
+                LOGGER.warn("TGS146: BLE:{}\nBL:{}", blockListNbtCache, blockList);
+                LOGGER.warn("TGS146: Struct:{}", structureNbt);
             }
             renderBlockList(ctx);
         }
@@ -148,7 +154,11 @@ public class TutorialGroupScreen extends Screen {
     }
 
     private void renderBlockList(DrawContext ctx) {
-        if (blockList == null || blockList.isEmpty()) return;
+        if (blockList == null || blockList.isEmpty()) {
+            LOGGER.warn("Render BlockList Null");
+            return;
+        }
+        LOGGER.debug(blockList.toString());
 
         int listW = 110, iconSize = 12;
         int x = this.width - listW - 10, y0 = 10, height = BLOCK_LINES * (iconSize + 2);
@@ -161,15 +171,16 @@ public class TutorialGroupScreen extends Screen {
         MinecraftClient mc = MinecraftClient.getInstance();
         ItemRenderer ir = mc.getItemRenderer();
         VertexConsumerProvider.Immediate vcp = mc.getBufferBuilders().getEntityVertexConsumers();
-
         //net.minecraft.client.render.DiffuseLighting.enableGuiDepthLighting();
-        GlStateManager._enableDepthTest();
-        GlStateManager._enablePolygonOffset();
-        GlStateManager._polygonOffset(-2f, -2f);
+
 
         final int FULL_BRIGHT = LightmapTextureManager.pack(15, 15);
         Matrix3x2fStack m2d = ctx.getMatrices();
         MatrixStack m3d = new MatrixStack();
+
+        GlStateManager._enableDepthTest();
+        GlStateManager._enablePolygonOffset();
+        GlStateManager._polygonOffset(-2f, -2f);
 
         for (int i = 0; i < BLOCK_LINES && (i + blockScroll) < total; i++) {
             var entry = blockList.get(i + blockScroll);
@@ -189,27 +200,39 @@ public class TutorialGroupScreen extends Screen {
                     m3d, vcp, mc.world, 0
             );
             m3d.pop();
-
-            m2d.pushMatrix();
-            m2d.translate(x + iconSize + 6, y + 2);
-            m2d.scale(fontSize, fontSize);
-            ctx.drawText(this.textRenderer, entry.displayName, 0, 0, 0xEBEBEB, false);
-            m2d.popMatrix();
-
-            m2d.pushMatrix();
-            m2d.translate(x + listW - 45, y + 2);
-            m2d.scale(fontSize, fontSize);
-            ctx.drawText(this.textRenderer, entry.countBoxGroup(), 0, 0, 0xFF512C, false);
-            m2d.popMatrix();
         }
 
         vcp.draw();
+        GlStateManager._polygonOffset(-2f, -2f);
+        GlStateManager._disablePolygonOffset();
+        GlStateManager._disableDepthTest();
+
+        for (int i = 0; i < BLOCK_LINES && (i + blockScroll) < total; i++) {
+            var entry = blockList.get(i + blockScroll);
+            if (entry.stack.isOf(Items.BARRIER)) continue;
+            int y = y0 + i * (iconSize + 2);
+
+            // 名称
+            m2d.pushMatrix();
+            m2d.translate(x + iconSize + 6, y + 2);
+            m2d.scale(fontSize, fontSize);
+            ctx.drawText(this.textRenderer, entry.displayName, 0, 0, 0xFFEBEBEB, false); // ARGB：FF 不透明
+            m2d.popMatrix();
+
+            // 数量
+            m2d.pushMatrix();
+            m2d.translate(x + listW - 45, y + 2);
+            m2d.scale(fontSize, fontSize);
+            ctx.drawText(this.textRenderer, entry.countBoxGroup(), 0, 0, 0xFFFF512C, false); // ARGB：FF 不透明
+            m2d.popMatrix();
+        }
+
 
         if (maxScroll > 0) {
-            int barX = x + listW - 6, barY = y0, barW = 4, barH = height;
-            ctx.fill(barX, barY, barX + barW, barY + barH, 0x22000000);
-            int sliderH = Math.max(12, barH * BLOCK_LINES / total);
-            int sliderY = barY + (barH - sliderH) * blockScroll / maxScroll;
+            int barX = x + listW - 6, barW = 4; //y0=barY, height=barH
+            ctx.fill(barX, y0, barX + barW, y0 + height, 0x22000000);
+            int sliderH = Math.max(12, height * BLOCK_LINES / total);
+            int sliderY = y0 + (height - sliderH) * blockScroll / maxScroll;
             ctx.fill(barX + 1, sliderY, barX + barW - 1, sliderY + sliderH, 0xFFAAAAAA);
         }
     }

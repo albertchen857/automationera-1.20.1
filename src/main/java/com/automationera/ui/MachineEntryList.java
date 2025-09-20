@@ -57,7 +57,7 @@ public class MachineEntryList extends EntryListWidget<MachineEntryList.Entry> {
                 ctx.fill(x, y, x + width, y + height, 0x22000000);
             }
             ctx.drawItem(icon, x + 4, y + 2);
-            ctx.drawText(MinecraftClient.getInstance().textRenderer, text, x + 24, y + 6, 0xFFFFFF, false);
+            ctx.drawText(MinecraftClient.getInstance().textRenderer, text, x + 24, y + 6, 0xFFFFFFFF, false);
         }
 
         @Override

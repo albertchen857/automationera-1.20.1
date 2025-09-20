@@ -61,11 +61,12 @@ public class AnalysisList {
         Map<Item, Integer> map = new HashMap<>();
         if (nbt == null || !nbt.contains("palette") || !nbt.contains("blocks")) return map;
         Optional<NbtList> palette = nbt.getList("palette");
+        if(palette.isEmpty()) return map;
         Optional<NbtList> blocks = nbt.getList("blocks");
         for (int i = 0; i < blocks.stream().count(); i++) {
             NbtCompound blk = blocks.get().getCompoundOrEmpty(i);
             int id = blk.getInt("state").orElse(0);
-            String blockId = String.valueOf(palette.get().getCompoundOrEmpty(id).getString("Name"));
+            String blockId = palette.get().getCompoundOrEmpty(id).getString("Name").orElse("");
             var block = Registries.BLOCK.get(Identifier.of(blockId));
             var item = block.asItem();
             if (item != null && !item.equals(net.minecraft.item.Items.AIR)) {
