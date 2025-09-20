@@ -134,9 +134,9 @@ public class TutorialGroupScreen extends Screen {
         if (machine != null) {
             structureNbt = TutorialManager.loadNbtFromResource(machine.id, currentStep);
             TutorialManager.renderStructure3D(this, structureNbt, currentStep, renderState, width, height, width, machine.selectbox);
-            if (blockListExternal != null) {
+            if (blockListExternal != null) { //???
                 blockList = blockListExternal;
-            } else if (blockList == null || blockListNbtCache == null || !structureNbt.equals(blockListNbtCache)) {
+            } else if (blockList == null || !structureNbt.equals(blockListNbtCache)) {
                 blockList = new AnalysisList(structureNbt).getResult();
                 blockListNbtCache = structureNbt == null ? null : structureNbt.copy();
             }
