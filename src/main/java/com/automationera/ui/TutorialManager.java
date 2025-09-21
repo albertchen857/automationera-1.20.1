@@ -162,6 +162,7 @@ public class TutorialManager {
                     int g = isWater ? 118 : 255;
                     int b = isWater ? 228 : 255;
                     if (isWater || block == Blocks.LAVA) {
+                        LOGGER.info("RenderFLUID");
                         renderFluidCube(matrices, immediate, tex, 0, fluidHeight, 0.9f, r, g, b);
                     }
                 }
@@ -186,66 +187,63 @@ public class TutorialManager {
         matrices.pop();
     }
 
+    private static Identifier to2DTexture(Identifier spriteId) {
+        String p = spriteId.getPath();
+        if (p.startsWith("textures/")) return spriteId;
+        return Identifier.of(spriteId.getNamespace(), "textures/" + p + ".png");
+    }
     public static void renderFluidCube(MatrixStack matrices, VertexConsumerProvider consumers,
                                        Identifier texture, float y1, float y2, float alpha, int r,int g, int b) {
-        Sprite sprite = MinecraftClient.getInstance()
-                .getBakedModelManager()
-                .getAtlas(Atlases.BLOCKS)
-                .getSprite(texture);
-
-        float u0 = sprite.getMinU();
-        float u1 = sprite.getMaxU();
-        float v0 = sprite.getMinV();
-        float v1 = sprite.getMaxV();
+        Identifier tex2D = to2DTexture(texture);
+        VertexConsumer builder = consumers.getBuffer(RenderLayer.getEntityTranslucent(tex2D));
 
         GlStateManager._enableBlend();
         GlStateManager._disableCull();
-        GpuTextureView view = MinecraftClient.getInstance()
-                .getBakedModelManager()
-                .getAtlas(Atlases.BLOCKS).getGlTextureView();
-        RenderSystem.setShaderTexture(0, view);
+
+        // 2D 纹理 UV 就是 0..1
+        float u0 = 0f, v0 = 0f, u1 = 1f, v1 = 1f;
 
         Matrix4f mat = matrices.peek().getPositionMatrix();
-        VertexConsumer builder = consumers.getBuffer(RenderLayer.getGlintTranslucent());
 
         int a = Math.round(255 * alpha);
         int light = 0xF000F0;
+        int overlay = OverlayTexture.DEFAULT_UV;
 
         // 上面
-        builder.vertex(mat, 0, y2, 0).texture(u0, v0).color(r, g, b, a).light(light).normal(0, 1, 0);
-        builder.vertex(mat, 1, y2, 0).texture(u1, v0).color(r, g, b, a).light(light).normal(0, 1, 0);
-        builder.vertex(mat, 1, y2, 1).texture(u1, v1).color(r, g, b, a).light(light).normal(0, 1, 0);
-        builder.vertex(mat, 0, y2, 1).texture(u0, v1).color(r, g, b, a).light(light).normal(0, 1, 0);
+        builder.vertex(mat, 0, y2, 0).texture(u0, v0).color(r, g, b, a).light(light).normal(0, 1, 0).overlay(overlay);
+        builder.vertex(mat, 1, y2, 0).texture(u1, v0).color(r, g, b, a).light(light).normal(0, 1, 0).overlay(overlay);
+        builder.vertex(mat, 1, y2, 1).texture(u1, v1).color(r, g, b, a).light(light).normal(0, 1, 0).overlay(overlay);
+        builder.vertex(mat, 0, y2, 1).texture(u0, v1).color(r, g, b, a).light(light).normal(0, 1, 0).overlay(overlay);
 
         // 下面
-        builder.vertex(mat, 0, y1, 0).texture(u0, v0).color(r, g, b, a).light(light).normal(0, -1, 0);
-        builder.vertex(mat, 1, y1, 0).texture(u1, v0).color(r, g, b, a).light(light).normal(0, -1, 0);
-        builder.vertex(mat, 1, y1, 1).texture(u1, v1).color(r, g, b, a).light(light).normal(0, -1, 0);
-        builder.vertex(mat, 0, y1, 1).texture(u0, v1).color(r, g, b, a).light(light).normal(0, -1, 0);
+        builder.vertex(mat, 0, y1, 0).texture(u0, v0).color(r, g, b, a).light(light).normal(0, -1, 0).overlay(overlay);
+        builder.vertex(mat, 1, y1, 0).texture(u1, v0).color(r, g, b, a).light(light).normal(0, -1, 0).overlay(overlay);
+        builder.vertex(mat, 1, y1, 1).texture(u1, v1).color(r, g, b, a).light(light).normal(0, -1, 0).overlay(overlay);
+        builder.vertex(mat, 0, y1, 1).texture(u0, v1).color(r, g, b, a).light(light).normal(0, -1, 0).overlay(overlay);
 
         // 前面
-        builder.vertex(mat, 0, y1, 0).texture(u0, v0).color(r, g, b, a).light(light).normal(0, 0, -1);
-        builder.vertex(mat, 1, y1, 0).texture(u1, v0).color(r, g, b, a).light(light).normal(0, 0, -1);
-        builder.vertex(mat, 1, y2, 0).texture(u1, v1).color(r, g, b, a).light(light).normal(0, 0, -1);
-        builder.vertex(mat, 0, y2, 0).texture(u0, v1).color(r, g, b, a).light(light).normal(0, 0, -1);
+        builder.vertex(mat, 0, y1, 0).texture(u0, v0).color(r, g, b, a).light(light).normal(0, 0, -1).overlay(overlay);
+        builder.vertex(mat, 1, y1, 0).texture(u1, v0).color(r, g, b, a).light(light).normal(0, 0, -1).overlay(overlay);
+        builder.vertex(mat, 1, y2, 0).texture(u1, v1).color(r, g, b, a).light(light).normal(0, 0, -1).overlay(overlay);
+        builder.vertex(mat, 0, y2, 0).texture(u0, v1).color(r, g, b, a).light(light).normal(0, 0, -1).overlay(overlay);
 
         // 后面
-        builder.vertex(mat, 0, y1, 1).texture(u0, v0).color(r, g, b, a).light(light).normal(0, 0, 1);
-        builder.vertex(mat, 1, y1, 1).texture(u1, v0).color(r, g, b, a).light(light).normal(0, 0, 1);
-        builder.vertex(mat, 1, y2, 1).texture(u1, v1).color(r, g, b, a).light(light).normal(0, 0, 1);
-        builder.vertex(mat, 0, y2, 1).texture(u0, v1).color(r, g, b, a).light(light).normal(0, 0, 1);
+        builder.vertex(mat, 0, y1, 1).texture(u0, v0).color(r, g, b, a).light(light).normal(0, 0, 1).overlay(overlay);
+        builder.vertex(mat, 1, y1, 1).texture(u1, v0).color(r, g, b, a).light(light).normal(0, 0, 1).overlay(overlay);
+        builder.vertex(mat, 1, y2, 1).texture(u1, v1).color(r, g, b, a).light(light).normal(0, 0, 1).overlay(overlay);
+        builder.vertex(mat, 0, y2, 1).texture(u0, v1).color(r, g, b, a).light(light).normal(0, 0, 1).overlay(overlay);
 
         // 左面
-        builder.vertex(mat, 0, y1, 0).texture(u0, v0).color(r, g, b, a).light(light).normal(-1, 0, 0);
-        builder.vertex(mat, 0, y1, 1).texture(u1, v0).color(r, g, b, a).light(light).normal(-1, 0, 0);
-        builder.vertex(mat, 0, y2, 1).texture(u1, v1).color(r, g, b, a).light(light).normal(-1, 0, 0);
-        builder.vertex(mat, 0, y2, 0).texture(u0, v1).color(r, g, b, a).light(light).normal(-1, 0, 0);
+        builder.vertex(mat, 0, y1, 0).texture(u0, v0).color(r, g, b, a).light(light).normal(-1, 0, 0).overlay(overlay);
+        builder.vertex(mat, 0, y1, 1).texture(u1, v0).color(r, g, b, a).light(light).normal(-1, 0, 0).overlay(overlay);
+        builder.vertex(mat, 0, y2, 1).texture(u1, v1).color(r, g, b, a).light(light).normal(-1, 0, 0).overlay(overlay);
+        builder.vertex(mat, 0, y2, 0).texture(u0, v1).color(r, g, b, a).light(light).normal(-1, 0, 0).overlay(overlay);
 
         // 右面
-        builder.vertex(mat, 1, y1, 0).texture(u0, v0).color(r, g, b, a).light(light).normal(1, 0, 0);
-        builder.vertex(mat, 1, y1, 1).texture(u1, v0).color(r, g, b, a).light(light).normal(1, 0, 0);
-        builder.vertex(mat, 1, y2, 1).texture(u1, v1).color(r, g, b, a).light(light).normal(1, 0, 0);
-        builder.vertex(mat, 1, y2, 0).texture(u0, v1).color(r, g, b, a).light(light).normal(1, 0, 0);
+        builder.vertex(mat, 1, y1, 0).texture(u0, v0).color(r, g, b, a).light(light).normal(1, 0, 0).overlay(overlay);
+        builder.vertex(mat, 1, y1, 1).texture(u1, v0).color(r, g, b, a).light(light).normal(1, 0, 0).overlay(overlay);
+        builder.vertex(mat, 1, y2, 1).texture(u1, v1).color(r, g, b, a).light(light).normal(1, 0, 0).overlay(overlay);
+        builder.vertex(mat, 1, y2, 0).texture(u0, v1).color(r, g, b, a).light(light).normal(1, 0, 0).overlay(overlay);
     }
 
     public static void renderSelectionBoxOutline(
@@ -305,31 +303,32 @@ public class TutorialManager {
 
     //private static BlockState state; fuck you java
     public static BlockState readBlockStateFromNbt(NbtCompound compound) {
-        Identifier id = Identifier.tryParse(String.valueOf(compound.getString("Name")));
+        String name = compound.getString("Name").orElse(null);
+        if (name == null || name.isEmpty()) {
+            return Blocks.AIR.getDefaultState();
+        }
+        Identifier id = Identifier.of(name);
         Block block = Registries.BLOCK.get(id);
-        AtomicReference<BlockState> state = new AtomicReference<>(block.getDefaultState());
+        BlockState state = block.getDefaultState();
 
         if (compound.contains("Properties")) {
-            Optional<NbtCompound> Oprops = compound.getCompound("Properties");
-            Oprops.ifPresent(props->{
+            NbtCompound props = compound.getCompound("Properties").orElse(null);
+            if (props != null) {
                 for (String key : props.getKeys()) {
-                    String value = String.valueOf(props);
                     Property<?> prop = block.getStateManager().getProperty(key);
-                    if (prop != null) {
-                        state.set(setProperty(state.get(), prop, value));
-                    }
-                }
-            });
-        }
-        return state.get();
-    }
+                    if (prop == null) continue;
 
-    // 用一个泛型辅助方法明确类型
-    private static <T extends Comparable<T>> BlockState setProperty(BlockState state, Property<T> prop, String value) {
-        Optional<T> opt = prop.parse(value);
-        if (opt.isPresent()) {
-            return state.with(prop, opt.get());
+                    String valueStr = props.getString(key).orElse(null);
+                    if (valueStr == null) continue;
+
+                    state = setProperty(state, prop, valueStr);
+                }
+            }
         }
         return state;
+    }
+
+    private static <T extends Comparable<T>> BlockState setProperty(BlockState state, Property<T> prop, String value) {
+        return prop.parse(value).map(v -> state.with(prop, v)).orElse(state);
     }
 }
