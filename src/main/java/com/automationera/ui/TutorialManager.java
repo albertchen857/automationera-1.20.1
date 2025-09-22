@@ -112,7 +112,7 @@ public class TutorialManager {
             int idx = tag.getInt("state");
             if (idx < 0 || idx >= palette.size()) continue;
             BlockState bs = palette.get(idx);
-
+            LOGGER.info(bs.toString());
             matrices.push();
             matrices.translate(x, y, z);
 
@@ -166,6 +166,9 @@ public class TutorialManager {
         RenderSystem.disableBlend();
 
         matrices.pop();
+        LOGGER.info(immediate.toString());
+        LOGGER.info(matrices.peek().getPositionMatrix().toString());
+        LOGGER.info(matrices.peek().getNormalMatrix().toString());
     }
 
     public static void renderFluidCube(MatrixStack matrices, VertexConsumerProvider consumers,
