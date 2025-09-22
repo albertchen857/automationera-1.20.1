@@ -1,24 +1,17 @@
 package com.automationera.ui;
 
 import com.google.gson.Gson;
-import com.mojang.blaze3d.buffers.GpuBuffer;
-import com.mojang.blaze3d.buffers.GpuBufferSlice;
-import com.mojang.blaze3d.buffers.Std140Builder;
 import com.mojang.blaze3d.opengl.GlStateManager;
-import com.mojang.blaze3d.systems.GpuDevice;
 import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.textures.GpuTextureView;
+import com.sun.jna.platform.unix.solaris.LibKstat;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockRenderType;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
 import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.render.*;
 import net.minecraft.client.render.block.BlockRenderManager;
 
-import net.minecraft.client.texture.Sprite;
-import net.minecraft.client.texture.atlas.Atlases;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.nbt.*;
 import net.minecraft.registry.Registries;
@@ -28,18 +21,50 @@ import net.minecraft.state.property.Property;
 import net.minecraft.util.Identifier;
 import org.joml.Matrix4f;
 import org.joml.Quaternionf;
-import org.joml.Vector3f;
-import org.lwjgl.system.MemoryStack;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.InputStream;
-import java.nio.ByteBuffer;
+import java.sql.Time;
+import java.time.Instant;
+import java.time.LocalTime;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
 
+
 public class TutorialManager {
-    private static final Logger LOGGER = org.slf4j.LoggerFactory.getLogger("AutomationEraTutorial");
+    private static long nowtime;
+    private static long lasttime=0;
+    private static boolean rt = true;
+    public static class SLogger {
+        private final Logger logger;
+
+        public SLogger(Logger logger) {
+            this.logger = logger;
+        }
+
+        public void info(String msg) {
+            if (logger != null && rt) {
+                logger.info(msg);
+            }
+        }
+
+        public void warn(String msg) {
+            if (logger != null && rt) {
+                logger.warn(msg);
+            }
+        }
+
+        public void error(String msg, Exception e) {
+            if (logger != null && rt) {
+                logger.error(msg, e);
+            }
+        }
+    }
+
+    private static final SLogger LOGGER = new SLogger(LoggerFactory.getLogger("AutomationEraTutorial"));
     private static final Gson GSON = new Gson();
+
 
     public static NbtCompound loadNbtFromResource(String group, int step) {
         ResourceManager rm = MinecraftClient.getInstance().getResourceManager();
@@ -55,6 +80,8 @@ public class TutorialManager {
     }
 
     public static void renderStructure3D(NbtCompound nbt,int step, IsometricRenderState state, int width, int height, int size, List<List<TutorialGroupScreen.SelectionBox>> SelectBox) {
+        nowtime = Instant.now().getEpochSecond();
+        if (nowtime-lasttime>1) rt=true;
         if (nbt == null || !nbt.contains("palette") || !nbt.contains("blocks")) {
             LOGGER.warn("renderStructure3D: NBT invalid");
             return;
@@ -63,19 +90,25 @@ public class TutorialManager {
         BlockRenderManager brm = mc.getBlockRenderManager();
 
         List<BlockState> palette = new ArrayList<>();
-        Optional<NbtList> optn = nbt.getList("palette");
-        optn.ifPresent(nbtElements -> {
-            for (int i = 0; i < optn.get().size(); i++)
-                palette.add(readBlockStateFromNbt(optn.get().getCompoundOrEmpty(i)));
-        });
-
-        NbtList blocks = nbt.getList("blocks").orElse(new NbtList());
+        NbtList ptn = nbt.getList("palette").orElse(null);
+        NbtList blocks = nbt.getList("blocks").orElse(null);
+        if (ptn == null || blocks == null) {
+            LOGGER.warn(String.format("palette&blocks not exist p%sb%s",ptn == null , blocks == null));
+            return;
+        }
+        for (int i = 0; i < ptn.size(); i++)
+            palette.add(readBlockStateFromNbt(ptn.getCompoundOrEmpty(i)));
+        LOGGER.info("Palette write in:"+palette);
 
         double minX = Double.MAX_VALUE, minY = Double.MAX_VALUE, minZ = Double.MAX_VALUE;
         double maxX = -Double.MAX_VALUE, maxY = -Double.MAX_VALUE, maxZ = -Double.MAX_VALUE;
         for (int i = 0; i < blocks.size(); i++) {
             NbtCompound blk = blocks.getCompoundOrEmpty(i);
-            NbtList pos = blk.getList("pos").orElse(new NbtList());
+            NbtList pos = blk.getList("pos").orElse(null);
+            if (pos==null) {
+                LOGGER.warn("blocks/pos"+i+" not exist");
+                return;
+            }
             minX = Math.min(minX, pos.getInt(0).orElse(0));
             maxX = Math.max(maxX, pos.getInt(0).orElse(0));
             minY = Math.min(minY, pos.getInt(1).orElse(0));
@@ -87,89 +120,84 @@ public class TutorialManager {
         double dy = (minY + maxY) / 2.0;
         double dz = (minZ + maxZ) / 2.0;
         double globalScale = state.scale * size / Math.max(1, Math.max(maxX-minX+1, Math.max(maxY-minY+1, maxZ-minZ+1))) / 1.2f;
+        LOGGER.info(String.format("BlockProp:MinMaxXYZ%s-%s-%s-%s-%s-%s|sizeXYZ%s-%s-%s|scale%s",minX,maxX,minY,maxY,minZ,maxZ,dx,dy,dz, globalScale));
 
         MatrixStack matrices = new MatrixStack();
-        matrices.push();
-        matrices.translate(width / 3f * 2f - 30, height / 8f * 5f + state.yc - 40, 200);//position
+        try {
+            matrices.push();
+            matrices.translate(width / 3f * 2f - 30, height / 8f * 5f + state.yc - 40, 200);//position
 
-        double nx = (Math.sin(Math.toRadians(state.rotation)) * Math.cos(Math.toRadians(state.pitch))),
-                ny = (-Math.sin(Math.toRadians(state.pitch))),
-                nz = (Math.cos(Math.toRadians(state.rotation)) * Math.cos(Math.toRadians(state.pitch)));
-        matrices.multiply(new Quaternionf().rotateX((float) -Math.asin(ny)));
-        matrices.multiply(new Quaternionf().rotateY((float) Math.atan2(nx, nz)));//Normal Rotation
+            double nx = (Math.sin(Math.toRadians(state.rotation)) * Math.cos(Math.toRadians(state.pitch))),
+                    ny = (-Math.sin(Math.toRadians(state.pitch))),
+                    nz = (Math.cos(Math.toRadians(state.rotation)) * Math.cos(Math.toRadians(state.pitch)));
+            matrices.multiply(new Quaternionf().rotateX((float) -Math.asin(ny)));
+            matrices.multiply(new Quaternionf().rotateY((float) Math.atan2(nx, nz)));//Normal Rotation
 
-        matrices.scale((float)globalScale, (float)-globalScale, (float)globalScale);
-        matrices.translate(-dx, -dy, -dz);//center point
+            matrices.scale((float) globalScale, (float) -globalScale, (float) globalScale);
+            matrices.translate(-dx, -dy, -dz);//center point
 
-        GlStateManager._enableDepthTest();
-        GlStateManager._depthMask(true);
-        GlStateManager._enableCull();
-        GlStateManager._enableBlend();
-        try (MemoryStack stack = MemoryStack.stackPush()) {
-            ByteBuffer buf = stack.malloc(32);
-            Std140Builder b = Std140Builder.intoBuffer(buf);
-            b.putVec3(new Vector3f(0.2f, 1.0f, -0.7f).normalize()).align(16)
-                    .putVec3(new Vector3f(-0.2f, 1.0f, 0.7f).normalize()).align(16);
-            buf.flip();
-
-            GpuDevice device = RenderSystem.getDevice();
-            GpuBuffer ubo = device.createBuffer(() -> "light_dirs",
-                    GpuBuffer.USAGE_UNIFORM, buf);
-            GpuBufferSlice slice = ubo.slice();
-            RenderSystem.setShaderLights(slice);
+            GlStateManager._enableDepthTest();
+            GlStateManager._depthMask(true);
+            GlStateManager._enableCull();
+            GlStateManager._enableBlend();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
-
+        LOGGER.info("Matrix pre-setting: done");
         VertexConsumerProvider.Immediate immediate = mc.getBufferBuilders().getEntityVertexConsumers();
 
         for (int i = 0; i < blocks.size(); i++) {
             NbtCompound blk = blocks.getCompoundOrEmpty(i);
-            NbtList pos = blk.getList("pos").orElse(new NbtList());
+            NbtList pos = blk.getList("pos").orElse(null);
+            if (pos == null)return;
             int x = pos.getInt(0).orElse(0), y = pos.getInt(1).orElse(0), z = pos.getInt(2).orElse(0);
-            Optional<Integer> idx = blk.getInt("state");
-            if(idx.isPresent()){
-                if (idx.get() < 0 || idx.get() >= palette.size()) continue;
-                BlockState bs = palette.get(idx.get());
-
-                matrices.push();
-                matrices.translate(x, y, z);
-                Block block = bs.getBlock();
-
-                if (!bs.isAir() || bs.getRenderType() == BlockRenderType.MODEL) {
-                    //LOGGER.info("{},{},{},{}|{}",block,x,y,z,bs);
-                    brm.renderBlockAsEntity(bs, matrices, immediate, 15728880, OverlayTexture.DEFAULT_UV);
-                }
-                if (!bs.getFluidState().isEmpty()) {
-                    boolean isWaterlogged = false;
-                    int level = 0;
-                    Identifier tex = block == Blocks.LAVA
-                            ? Identifier.of("minecraft", "block/lava_still")
-                            : Identifier.of("minecraft", "block/water_still");
-                    for (Property<?> prop : bs.getProperties()) {
-                        if (prop.getName().equals("waterlogged") && bs.get(prop).toString().equals("true")) {
-                            isWaterlogged = true;
-                            break;
-                        }
-                    }
-                    for (Property<?> prop : bs.getProperties()) {
-                        if (prop.getName().toLowerCase().contains("level")) {
-                            level = Integer.parseInt(bs.get(prop).toString());
-                            break;
-                        }
-                    }
-                    boolean isWater = (block == Blocks.WATER || isWaterlogged);
-                    float fluidHeight = (level == 0) ? 1.0f : (8 - level) / 8.0f;
-                    int r = isWater ? 63 : 255;
-                    int g = isWater ? 118 : 255;
-                    int b = isWater ? 228 : 255;
-                    if (isWater || block == Blocks.LAVA) {
-                        LOGGER.info("RenderFLUID");
-                        renderFluidCube(matrices, immediate, tex, 0, fluidHeight, 0.9f, r, g, b);
-                    }
-                }
-                matrices.pop();
+            Integer idx = blk.getInt("state").orElse(null);
+            if(idx == null){
+                LOGGER.warn("State not exist");
+                return;
             }
+            if (idx < 0 || idx >= palette.size()) continue;
+            BlockState bs = palette.get(idx);
 
+            matrices.push();
+            matrices.translate(x, y, z);
+            Block block = bs.getBlock();
+
+            if (!bs.isAir() || bs.getRenderType() == BlockRenderType.MODEL) {
+                brm.renderBlockAsEntity(bs, matrices, immediate, 15728880, OverlayTexture.DEFAULT_UV);
+                LOGGER.info(String.format("Block write sus: %s,%s,%s,%s|%s",block,x,y,z,bs));
+            }
+            if (!bs.getFluidState().isEmpty()) {
+                boolean isWaterlogged = false;
+                int level = 0;
+                Identifier tex = (block == Blocks.LAVA)
+                        ? Identifier.of("minecraft", "block/lava_still")
+                        : Identifier.of("minecraft", "block/water_still");
+                for (Property<?> prop : bs.getProperties()) {
+                    if (prop.getName().equals("waterlogged") && bs.get(prop).toString().equals("true")) {
+                        isWaterlogged = true;
+                        break;
+                    }
+                }
+                for (Property<?> prop : bs.getProperties()) {
+                    if (prop.getName().toLowerCase().contains("level")) {
+                        level = Integer.parseInt(bs.get(prop).toString());
+                        break;
+                    }
+                }
+                boolean isWater = (block == Blocks.WATER || isWaterlogged);
+                float fluidHeight = (level == 0) ? 1.0f : (8 - level) / 8.0f;
+                int r = isWater ? 63 : 255;
+                int g = isWater ? 118 : 255;
+                int b = isWater ? 228 : 255;
+                if (isWater || block == Blocks.LAVA) {
+                    renderFluidCube(matrices, immediate, tex, 0, fluidHeight, 0.9f, r, g, b);
+                }
+                LOGGER.info(String.format("Liquid write sus: %s,%s,%s,%s|%s",block,x,y,z,bs));
+            }
+            matrices.pop();
         }
+        LOGGER.info("Matrix write in: done");
         if (SelectBox != null && step-1 < SelectBox.size()) {
             long time = System.currentTimeMillis();
             float a = 0.5f + 0.3f * (float)Math.abs(Math.sin(time / 300.0));
@@ -177,30 +205,36 @@ public class TutorialManager {
                 renderSelectionBoxOutline(matrices, immediate, box, 2.0f, 1f, 1f, 0.0f, a); // 粗亮黄
             }
         }
+        LOGGER.info("SelectBox Render: done");
         immediate.draw();
-
-        GlStateManager._depthMask(false);
+        LOGGER.info("Matrix setting: finish DR");
         GlStateManager._disableDepthTest();
+        LOGGER.info("Matrix setting: finish DP");
+        GlStateManager._depthMask(false);
+        LOGGER.info("Matrix setting: finish DM");
         GlStateManager._disableCull();
+        LOGGER.info("Matrix setting: finish DC");
         GlStateManager._disableBlend();
-
+        LOGGER.info("Matrix setting: finish DB");
         matrices.pop();
+        LOGGER.info("Matrix setting: finish");
+        LOGGER.info(immediate.toString());
+        LOGGER.info(matrices.peek().getPositionMatrix().toString());
+        LOGGER.info(matrices.peek().getNormalMatrix().toString());
+        rt = false;
+        lasttime=Instant.now().getEpochSecond();
     }
 
-    private static Identifier to2DTexture(Identifier spriteId) {
-        String p = spriteId.getPath();
-        if (p.startsWith("textures/")) return spriteId;
-        return Identifier.of(spriteId.getNamespace(), "textures/" + p + ".png");
-    }
     public static void renderFluidCube(MatrixStack matrices, VertexConsumerProvider consumers,
                                        Identifier texture, float y1, float y2, float alpha, int r,int g, int b) {
-        Identifier tex2D = to2DTexture(texture);
+
+        String p = texture.getPath();
+        Identifier tex2D =  (p.startsWith("textures/")) ? Identifier.of(texture.getNamespace(), "textures/" + p + ".png") : texture;
         VertexConsumer builder = consumers.getBuffer(RenderLayer.getEntityTranslucent(tex2D));
 
-        GlStateManager._enableBlend();
-        GlStateManager._disableCull();
+        //GlStateManager._enableBlend();
+        //GlStateManager._disableCull();
 
-        // 2D 纹理 UV 就是 0..1
         float u0 = 0f, v0 = 0f, u1 = 1f, v1 = 1f;
 
         Matrix4f mat = matrices.peek().getPositionMatrix();
@@ -253,51 +287,55 @@ public class TutorialManager {
             float lineWidth,
             float r, float g, float b, float a
     ) {
-        float minX = Math.min(box.x1, box.x2), minY = Math.min(box.y1, box.y2), minZ = Math.min(box.z1, box.z2);
-        float maxX = Math.max(box.x1, box.x2) + 1, maxY = Math.max(box.y1, box.y2) + 1, maxZ = Math.max(box.z1, box.z2) + 1;
+        try {
+            float minX = Math.min(box.x1, box.x2), minY = Math.min(box.y1, box.y2), minZ = Math.min(box.z1, box.z2);
+            float maxX = Math.max(box.x1, box.x2) + 1, maxY = Math.max(box.y1, box.y2) + 1, maxZ = Math.max(box.z1, box.z2) + 1;
 
-        RenderSystem.lineWidth(lineWidth);
+            RenderSystem.lineWidth(lineWidth);
 
-        Matrix4f mat = matrices.peek().getPositionMatrix();
-        VertexConsumer builder = consumers.getBuffer(RenderLayer.getLines());
-        //底
-        builder.vertex(mat, minX, minY, minZ).color(r, g, b, a).normal(1, 0, 0);
-        builder.vertex(mat, maxX, minY, minZ).color(r, g, b, a).normal(1, 0, 0);
+            Matrix4f mat = matrices.peek().getPositionMatrix();
+            VertexConsumer builder = consumers.getBuffer(RenderLayer.getLines());
+            //底
+            builder.vertex(mat, minX, minY, minZ).color(r, g, b, a).normal(1, 0, 0);
+            builder.vertex(mat, maxX, minY, minZ).color(r, g, b, a).normal(1, 0, 0);
 
-        builder.vertex(mat, maxX, minY, minZ).color(r, g, b, a).normal(1, 0, 0);
-        builder.vertex(mat, maxX, minY, maxZ).color(r, g, b, a).normal(1, 0, 0);
+            builder.vertex(mat, maxX, minY, minZ).color(r, g, b, a).normal(1, 0, 0);
+            builder.vertex(mat, maxX, minY, maxZ).color(r, g, b, a).normal(1, 0, 0);
 
-        builder.vertex(mat, maxX, minY, maxZ).color(r, g, b, a).normal(1, 0, 0);
-        builder.vertex(mat, minX, minY, maxZ).color(r, g, b, a).normal(1, 0, 0);
+            builder.vertex(mat, maxX, minY, maxZ).color(r, g, b, a).normal(1, 0, 0);
+            builder.vertex(mat, minX, minY, maxZ).color(r, g, b, a).normal(1, 0, 0);
 
-        builder.vertex(mat, minX, minY, maxZ).color(r, g, b, a).normal(1, 0, 0);
-        builder.vertex(mat, minX, minY, minZ).color(r, g, b, a).normal(1, 0, 0);
+            builder.vertex(mat, minX, minY, maxZ).color(r, g, b, a).normal(1, 0, 0);
+            builder.vertex(mat, minX, minY, minZ).color(r, g, b, a).normal(1, 0, 0);
 
-        // 顶面
-        builder.vertex(mat, minX, maxY, minZ).color(r, g, b, a).normal(1, 0, 0);
-        builder.vertex(mat, maxX, maxY, minZ).color(r, g, b, a).normal(1, 0, 0);
+            // 顶面
+            builder.vertex(mat, minX, maxY, minZ).color(r, g, b, a).normal(1, 0, 0);
+            builder.vertex(mat, maxX, maxY, minZ).color(r, g, b, a).normal(1, 0, 0);
 
-        builder.vertex(mat, maxX, maxY, minZ).color(r, g, b, a).normal(1, 0, 0);
-        builder.vertex(mat, maxX, maxY, maxZ).color(r, g, b, a).normal(1, 0, 0);
+            builder.vertex(mat, maxX, maxY, minZ).color(r, g, b, a).normal(1, 0, 0);
+            builder.vertex(mat, maxX, maxY, maxZ).color(r, g, b, a).normal(1, 0, 0);
 
-        builder.vertex(mat, maxX, maxY, maxZ).color(r, g, b, a).normal(1, 0, 0);
-        builder.vertex(mat, minX, maxY, maxZ).color(r, g, b, a).normal(1, 0, 0);
+            builder.vertex(mat, maxX, maxY, maxZ).color(r, g, b, a).normal(1, 0, 0);
+            builder.vertex(mat, minX, maxY, maxZ).color(r, g, b, a).normal(1, 0, 0);
 
-        builder.vertex(mat, minX, maxY, maxZ).color(r, g, b, a).normal(1, 0, 0);
-        builder.vertex(mat, minX, maxY, minZ).color(r, g, b, a).normal(1, 0, 0);
+            builder.vertex(mat, minX, maxY, maxZ).color(r, g, b, a).normal(1, 0, 0);
+            builder.vertex(mat, minX, maxY, minZ).color(r, g, b, a).normal(1, 0, 0);
 
-        // 竖边
-        builder.vertex(mat, minX, minY, minZ).color(r, g, b, a).normal(0, 1, 0);
-        builder.vertex(mat, minX, maxY, minZ).color(r, g, b, a).normal(0, 1, 0);
+            // 竖边
+            builder.vertex(mat, minX, minY, minZ).color(r, g, b, a).normal(0, 1, 0);
+            builder.vertex(mat, minX, maxY, minZ).color(r, g, b, a).normal(0, 1, 0);
 
-        builder.vertex(mat, maxX, minY, minZ).color(r, g, b, a).normal(0, 1, 0);
-        builder.vertex(mat, maxX, maxY, minZ).color(r, g, b, a).normal(0, 1, 0);
+            builder.vertex(mat, maxX, minY, minZ).color(r, g, b, a).normal(0, 1, 0);
+            builder.vertex(mat, maxX, maxY, minZ).color(r, g, b, a).normal(0, 1, 0);
 
-        builder.vertex(mat, maxX, minY, maxZ).color(r, g, b, a).normal(0, 1, 0);
-        builder.vertex(mat, maxX, maxY, maxZ).color(r, g, b, a).normal(0, 1, 0);
+            builder.vertex(mat, maxX, minY, maxZ).color(r, g, b, a).normal(0, 1, 0);
+            builder.vertex(mat, maxX, maxY, maxZ).color(r, g, b, a).normal(0, 1, 0);
 
-        builder.vertex(mat, minX, minY, maxZ).color(r, g, b, a).normal(0, 1, 0);
-        builder.vertex(mat, minX, maxY, maxZ).color(r, g, b, a).normal(0, 1, 0);
+            builder.vertex(mat, minX, minY, maxZ).color(r, g, b, a).normal(0, 1, 0);
+            builder.vertex(mat, minX, maxY, maxZ).color(r, g, b, a).normal(0, 1, 0);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
 
@@ -309,11 +347,11 @@ public class TutorialManager {
         }
         Identifier id = Identifier.of(name);
         Block block = Registries.BLOCK.get(id);
-        BlockState state = block.getDefaultState();
+        AtomicReference<BlockState> state = new AtomicReference<>(block.getDefaultState());
 
         if (compound.contains("Properties")) {
-            NbtCompound props = compound.getCompound("Properties").orElse(null);
-            if (props != null) {
+            Optional<NbtCompound> oprops = compound.getCompound("Properties");
+            oprops.ifPresent(props-> {
                 for (String key : props.getKeys()) {
                     Property<?> prop = block.getStateManager().getProperty(key);
                     if (prop == null) continue;
@@ -321,11 +359,11 @@ public class TutorialManager {
                     String valueStr = props.getString(key).orElse(null);
                     if (valueStr == null) continue;
 
-                    state = setProperty(state, prop, valueStr);
+                    state.set(setProperty(state.get(), prop, valueStr));
                 }
-            }
+            });
         }
-        return state;
+        return state.get();
     }
 
     private static <T extends Comparable<T>> BlockState setProperty(BlockState state, Property<T> prop, String value) {
