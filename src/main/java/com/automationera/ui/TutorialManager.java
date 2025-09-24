@@ -3,15 +3,18 @@ package com.automationera.ui;
 import com.google.gson.Gson;
 import com.mojang.blaze3d.opengl.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.blaze3d.textures.GpuTextureView;
 import com.sun.jna.platform.unix.solaris.LibKstat;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockRenderType;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
 import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.render.*;
 import net.minecraft.client.render.block.BlockRenderManager;
 
+import net.minecraft.client.texture.atlas.Atlases;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.nbt.*;
 import net.minecraft.registry.Registries;
@@ -79,7 +82,7 @@ public class TutorialManager {
         }
     }
 
-    public static void renderStructure3D(NbtCompound nbt,int step, IsometricRenderState state, int width, int height, int size, List<List<TutorialGroupScreen.SelectionBox>> SelectBox) {
+    public static void renderStructure3D(DrawContext ctx, NbtCompound nbt, int step, IsometricRenderState state, int width, int height, int size, List<List<TutorialGroupScreen.SelectionBox>> SelectBox) {
         nowtime = Instant.now().getEpochSecond();
         if (nowtime-lasttime>1) rt=true;
         if (nbt == null || !nbt.contains("palette") || !nbt.contains("blocks")) {
@@ -120,7 +123,7 @@ public class TutorialManager {
         double dy = (minY + maxY) / 2.0;
         double dz = (minZ + maxZ) / 2.0;
         double globalScale = state.scale * size / Math.max(1, Math.max(maxX-minX+1, Math.max(maxY-minY+1, maxZ-minZ+1))) / 1.2f;
-        LOGGER.info(String.format("BlockProp:MinMaxXYZ%s-%s-%s-%s-%s-%s|sizeXYZ%s-%s-%s|scale%s",minX,maxX,minY,maxY,minZ,maxZ,dx,dy,dz, globalScale));
+        //LOGGER.info(String.format("BlockProp:MinMaxXYZ%s-%s-%s-%s-%s-%s|sizeXYZ%s-%s-%s|scale%s",minX,maxX,minY,maxY,minZ,maxZ,dx,dy,dz, globalScale));
 
         MatrixStack matrices = new MatrixStack();
         try {
@@ -130,12 +133,15 @@ public class TutorialManager {
             double nx = (Math.sin(Math.toRadians(state.rotation)) * Math.cos(Math.toRadians(state.pitch))),
                     ny = (-Math.sin(Math.toRadians(state.pitch))),
                     nz = (Math.cos(Math.toRadians(state.rotation)) * Math.cos(Math.toRadians(state.pitch)));
-            matrices.multiply(new Quaternionf().rotateX((float) -Math.asin(ny)));
-            matrices.multiply(new Quaternionf().rotateY((float) Math.atan2(nx, nz)));//Normal Rotation
+            //matrices.multiply(new Quaternionf().rotateX((float) -Math.asin(ny)));
+            //matrices.multiply(new Quaternionf().rotateY((float) Math.atan2(nx, nz)));//Normal Rotation
 
-            matrices.scale((float) globalScale, (float) -globalScale, (float) globalScale);
-            matrices.translate(-dx, -dy, -dz);//center point
-
+            //matrices.scale((float) globalScale, (float) -globalScale, (float) globalScale);
+            //matrices.translate(-dx, -dy, -dz);//center point
+            GpuTextureView view = mc.getBakedModelManager()
+                    .getAtlas(Atlases.BLOCKS)
+                    .getGlTextureView();
+            RenderSystem.setShaderTexture(0, view);
             GlStateManager._enableDepthTest();
             GlStateManager._depthMask(true);
             GlStateManager._enableCull();
@@ -150,7 +156,9 @@ public class TutorialManager {
             NbtCompound blk = blocks.getCompoundOrEmpty(i);
             NbtList pos = blk.getList("pos").orElse(null);
             if (pos == null)return;
-            int x = pos.getInt(0).orElse(0), y = pos.getInt(1).orElse(0), z = pos.getInt(2).orElse(0);
+            int x = pos.getInt(0).orElse(0);
+            int y = pos.getInt(1).orElse(0);
+            int z = pos.getInt(2).orElse(0);
             Integer idx = blk.getInt("state").orElse(null);
             if(idx == null){
                 LOGGER.warn("State not exist");
@@ -164,10 +172,10 @@ public class TutorialManager {
             Block block = bs.getBlock();
 
             if (!bs.isAir() || bs.getRenderType() == BlockRenderType.MODEL) {
-                brm.renderBlockAsEntity(bs, matrices, immediate, 15728880, OverlayTexture.DEFAULT_UV);
+                brm.renderBlockAsEntity(bs, matrices, immediate, 15728880, OverlayTexture.DEFAULT_UV);//bs
                 LOGGER.info(String.format("Block write sus: %s,%s,%s,%s|%s",block,x,y,z,bs));
             }
-            if (!bs.getFluidState().isEmpty()) {
+            /*if (!bs.getFluidState().isEmpty()) {
                 boolean isWaterlogged = false;
                 int level = 0;
                 Identifier tex = (block == Blocks.LAVA)
@@ -194,33 +202,23 @@ public class TutorialManager {
                     renderFluidCube(matrices, immediate, tex, 0, fluidHeight, 0.9f, r, g, b);
                 }
                 LOGGER.info(String.format("Liquid write sus: %s,%s,%s,%s|%s",block,x,y,z,bs));
-            }
+            }*/
             matrices.pop();
         }
-        LOGGER.info("Matrix write in: done");
+        /*LOGGER.info("Matrix write in: done");
         if (SelectBox != null && step-1 < SelectBox.size()) {
             long time = System.currentTimeMillis();
             float a = 0.5f + 0.3f * (float)Math.abs(Math.sin(time / 300.0));
             for (TutorialGroupScreen.SelectionBox box : SelectBox.get(step-1)) {
                 renderSelectionBoxOutline(matrices, immediate, box, 2.0f, 1f, 1f, 0.0f, a); // 粗亮黄
             }
-        }
-        LOGGER.info("SelectBox Render: done");
+        }*/
         immediate.draw();
-        LOGGER.info("Matrix setting: finish DR");
         GlStateManager._disableDepthTest();
-        LOGGER.info("Matrix setting: finish DP");
         GlStateManager._depthMask(false);
-        LOGGER.info("Matrix setting: finish DM");
         GlStateManager._disableCull();
-        LOGGER.info("Matrix setting: finish DC");
         GlStateManager._disableBlend();
-        LOGGER.info("Matrix setting: finish DB");
         matrices.pop();
-        LOGGER.info("Matrix setting: finish");
-        LOGGER.info(immediate.toString());
-        LOGGER.info(matrices.peek().getPositionMatrix().toString());
-        LOGGER.info(matrices.peek().getNormalMatrix().toString());
         rt = false;
         lasttime=Instant.now().getEpochSecond();
     }

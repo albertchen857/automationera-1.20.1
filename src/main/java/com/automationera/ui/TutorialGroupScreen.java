@@ -35,14 +35,12 @@ public class TutorialGroupScreen extends Screen {
     private int currentStep = 1;
     private boolean autoRotate = false;
     private MachineInfo machine;
-    private MachineEntryList list;
     public static final org.slf4j.Logger LOGGER = LoggerFactory.getLogger("AutomationEraTutorial");
 
-    private NbtCompound structureNbt;
     private IsometricRenderState renderState;
     private List<MachineInfo> choose = List.of();
 
-    private List<AnalysisList.Entry> blockListExternal;
+    private final List<AnalysisList.Entry> blockListExternal;
     private List<AnalysisList.Entry> blockList;
     private NbtCompound blockListNbtCache = null;
     private int blockScroll = 0;
@@ -110,7 +108,7 @@ public class TutorialGroupScreen extends Screen {
             default -> OutputRecipe.farmMachines;
         };
         int listWidth = this.width / 5;
-        list = new MachineEntryList(client, listWidth, this.height - 120, 25, 20);
+        MachineEntryList list = new MachineEntryList(client, listWidth, this.height - 120, 25, 20);
         for (int m = 0; m < choose.size(); m++) {
             int idx = m;
             MachineInfo info = choose.get(m);
@@ -123,7 +121,11 @@ public class TutorialGroupScreen extends Screen {
         list.selectByIndex(selectedMac);
         this.addDrawableChild(list);
         this.addDrawableChild(ButtonWidget.builder(Text.translatable("tutorial.ui.close"),
-                        btn -> this.client.setScreen(new TutorialMainScreen()))
+                        btn -> {
+                            if (this.client != null) {
+                                this.client.setScreen(new TutorialMainScreen());
+                            }
+                        })
                 .dimensions(20, this.height - 30, 60, 20).build());
         machine = choose.isEmpty() ? new MachineInfo("NULL",Items.AIR,Text.literal("null"),List.of(),true) : choose.get(Math.min(selectedMac, choose.size() - 1));
         TextWidget titleWidget = new TextWidget(0, 5, 200, 20, this.title.copy().append(Text.literal("-")).append(machine.name), this.textRenderer);
@@ -135,19 +137,16 @@ public class TutorialGroupScreen extends Screen {
         ctx.fill(0, 0, this.width, this.height, 0x77000000);
         super.render(ctx, mouseX, mouseY, delta);
         if (machine != null) {
-            structureNbt = TutorialManager.loadNbtFromResource(machine.id, currentStep);
-            TutorialManager.renderStructure3D(structureNbt, currentStep, renderState, width, height, width, machine.selectbox);
-            if (blockListExternal != null) {
+            NbtCompound structureNbt = TutorialManager.loadNbtFromResource(machine.id, currentStep);
+            TutorialManager.renderStructure3D(ctx, structureNbt, currentStep, renderState, width, height, width, machine.selectbox);
+            /*if (blockListExternal != null) {
                 blockList = blockListExternal; //execute
-            } else if (blockList == null || !structureNbt.equals(blockListNbtCache)) {
+            } else
+            if (structureNbt != null && (blockList == null || !structureNbt.equals(blockListNbtCache))) {
                 blockList = new AnalysisList(structureNbt).getResult(); //null
                 blockListNbtCache = structureNbt == null ? null : structureNbt.copy();
-            } else{
-                //BE = NULL, BL != BULL, StructNBT = null, structnbt=blockListNbtCache
-                //LOGGER.warn("TGS146: BLE:{}\nBL:{}", blockListNbtCache, blockList.toArray());
-                //LOGGER.warn("TGS146: Struct:{}", structureNbt);
             }
-            renderBlockList(ctx);
+            renderBlockList(ctx);*///导致factory页未响应
         }
         if (autoRotate) renderState.addRotation(rotateSpeed);
         renderUI();
@@ -245,12 +244,8 @@ public class TutorialGroupScreen extends Screen {
     }
 
     public void nextStep() {
-        List<MachineInfo> choose2 = switch (group) {
-            case "factory" -> OutputRecipe.factoryMachines;
-            case "special" -> OutputRecipe.specialMachines;
-            default -> OutputRecipe.farmMachines;
-        };
-        MachineInfo machine = choose2.get(selectedMac);
+        if (choose.isEmpty()) return;
+        MachineInfo machine = choose.get(selectedMac);
         if (TutorialManager.loadNbtFromResource(machine.id, currentStep + 1) != null) {
             currentStep++;
             this.client.setScreen(new TutorialGroupScreen(group, selectedMac, currentStep, renderState, blockListExternal));
@@ -279,12 +274,8 @@ public class TutorialGroupScreen extends Screen {
     }
 
     public void output(){
-        List<MachineInfo> choose2 = switch (group) {
-            case "factory" -> OutputRecipe.factoryMachines;
-            case "special" -> OutputRecipe.specialMachines;
-            default -> OutputRecipe.farmMachines;
-        };
-        int max = choose2.get(selectedMac).selectbox.size();
+        if (choose.isEmpty()) return;
+        int max = choose.get(selectedMac).selectbox.size();
         LOGGER.info("{}.{}",machine.id,max);
         ExportFile.exportTutorialFolder(machine.id,max);
     }
