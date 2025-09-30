@@ -23,7 +23,6 @@ public class ItemIconButton extends ButtonWidget {
 
     public ItemIconButton(ItemStack stack, Text text, int x, int y, int width, int height, PressAction action) {
         super(x, y, width, height, text, action, Supplier::get);
-        LOGGER.warn(String.valueOf(text));
         this.stack = stack;
     }
 

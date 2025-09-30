@@ -148,7 +148,7 @@ public class MachineRecipeCategory implements DisplayCategory<MachineReiRecipe> 
                     // Alternate output ingredient (template-defined)
                     int altIndex = i - display.getAllOutputs().size();
                     List<net.minecraft.item.Item> altItems = display.getTemplate().get(
-                            display.getIng().get(key).get(0).get(altIndex));
+                            display.getIng().get(key).getFirst().get(altIndex));
                     List<EntryStack<?>> stacks = altItems.stream()
                             .map(item -> EntryStacks.of(new ItemStack(item)))
                             .collect(Collectors.toList());

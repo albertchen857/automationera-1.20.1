@@ -3,28 +3,17 @@ package com.automationera.ui;
 import com.automationera.OutputRecipe;
 import com.automationera.basic.ExportFile;
 
-import com.mojang.blaze3d.opengl.GlStateManager;
-import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.widget.ButtonWidget;
 import net.minecraft.client.gui.widget.NarratedMultilineTextWidget;
 import net.minecraft.client.gui.widget.TextWidget;
-import net.minecraft.client.render.LightmapTextureManager;
-import net.minecraft.client.render.OverlayTexture;
-import net.minecraft.client.render.VertexConsumerProvider;
-import net.minecraft.client.render.item.ItemRenderer;
-import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.item.Item;
-import net.minecraft.item.ItemDisplayContext;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.text.Text;
 import net.minecraft.client.gui.DrawContext;
-import net.minecraft.util.Identifier;
-import org.joml.Matrix3x2fStack;
 import org.slf4j.LoggerFactory;
-
 import java.util.List;
 import java.util.Map;
 
@@ -42,7 +31,6 @@ public class TutorialGroupScreen extends Screen {
 
     private final List<AnalysisList.Entry> blockListExternal;
     private List<AnalysisList.Entry> blockList;
-    private NbtCompound blockListNbtCache = null;
     private int blockScroll = 0;
     private static final int BLOCK_LINES = 8;
 
@@ -78,6 +66,7 @@ public class TutorialGroupScreen extends Screen {
             blockScroll -= vertical > 0 ? 1 : -1;
             if (blockScroll < 0) blockScroll = 0;
             if (blockScroll > maxScroll) blockScroll = maxScroll;
+            LOGGER.info("Scrolled {}",renderState.rotation);
             return true;
         } else if (mouseX >= (double) this.width *0.4 && mouseY <= (double) this.height *0.75){
             renderState.addScale(1.0f + (float) (vertical + horizontal) * 0.08f);
@@ -88,13 +77,13 @@ public class TutorialGroupScreen extends Screen {
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
         int listW = 110, iconSize = 12, x = this.width - listW - 10, y0 = 10, listH = BLOCK_LINES * (iconSize + 2);
-        int barX = x + listW - 6, barY = y0, barW = 4, barH = listH;
+        int barX = x + listW - 6, barW = 4;
         int total = blockList == null ? 0 : blockList.size();
         int maxScroll = Math.max(0, total - BLOCK_LINES);
-        if (maxScroll > 0 && mouseX >= barX && mouseX < barX + barW && mouseY >= barY && mouseY < barY + barH) {
-            int sliderH = Math.max(12, barH * BLOCK_LINES / total);
-            int relY = (int) mouseY - barY - sliderH / 2;
-            blockScroll = Math.max(0, Math.min(maxScroll, relY * maxScroll / (barH - sliderH)));
+        if (maxScroll > 0 && mouseX >= barX && mouseX < barX + barW && mouseY >= y0 && mouseY < y0 + listH) {
+            int sliderH = Math.max(12, listH * BLOCK_LINES / total);
+            int relY = (int) mouseY - y0 - sliderH / 2;
+            blockScroll = Math.max(0, Math.min(maxScroll, relY * maxScroll / (listH - sliderH)));
             return true;
         }
         return super.mouseClicked(mouseX, mouseY, button);
@@ -138,7 +127,8 @@ public class TutorialGroupScreen extends Screen {
         super.render(ctx, mouseX, mouseY, delta);
         if (machine != null) {
             NbtCompound structureNbt = TutorialManager.loadNbtFromResource(machine.id, currentStep);
-            TutorialManager.renderStructure3D(ctx, structureNbt, currentStep, renderState, width, height, width, machine.selectbox);
+            TutorialManager TM = new TutorialManager();
+            TM.renderStructure3D(ctx, structureNbt, currentStep, renderState, width, height, width, machine.selectbox);
             /*if (blockListExternal != null) {
                 blockList = blockListExternal; //execute
             } else
@@ -219,9 +209,9 @@ public class TutorialGroupScreen extends Screen {
                     else renderState.addPitch(-120);
                     this.client.setScreen(new TutorialGroupScreen(group, selectedMac, currentStep, renderState, blockListExternal));
                 }).dimensions(260, this.height - 30, 60, 20).build());
-        this.addDrawableChild(ButtonWidget.builder(Text.literal("\u25B6"),
+        this.addDrawableChild(ButtonWidget.builder(Text.literal("▶"),
                 btn -> autoRotate = !autoRotate).dimensions(320, this.height - 30, 20, 20).build());
-        this.addDrawableChild(ButtonWidget.builder(Text.literal("\u21BA"),
+        this.addDrawableChild(ButtonWidget.builder(Text.literal("↺"),
                 btn -> resetKey()).dimensions(340, this.height - 30, 20, 20).build());
         NarratedMultilineTextWidget descWidget = new NarratedMultilineTextWidget(180, Text.translatable("tutorial." + machine.id + ".step" + currentStep), this.textRenderer);
         descWidget.setPosition(180, 170);
@@ -248,7 +238,9 @@ public class TutorialGroupScreen extends Screen {
         MachineInfo machine = choose.get(selectedMac);
         if (TutorialManager.loadNbtFromResource(machine.id, currentStep + 1) != null) {
             currentStep++;
-            this.client.setScreen(new TutorialGroupScreen(group, selectedMac, currentStep, renderState, blockListExternal));
+            if (this.client != null) {
+                this.client.setScreen(new TutorialGroupScreen(group, selectedMac, currentStep, renderState, blockListExternal));
+            }
         } else {
             LOGGER.warn("CurrentStep Up NULL");
         }
@@ -257,7 +249,9 @@ public class TutorialGroupScreen extends Screen {
     public void lastStep() {
         if (currentStep > 1) {
             currentStep--;
-            this.client.setScreen(new TutorialGroupScreen(group, selectedMac, currentStep, renderState, blockListExternal));
+            if (this.client != null) {
+                this.client.setScreen(new TutorialGroupScreen(group, selectedMac, currentStep, renderState, blockListExternal));
+            }
         }
     }
 
@@ -288,6 +282,10 @@ public class TutorialGroupScreen extends Screen {
                 continue;
             }
         }
+    }
+
+    public void setBlockList(List<AnalysisList.Entry> blockList) {
+        this.blockList = blockList;
     }
 
     public static class MachineInfo {

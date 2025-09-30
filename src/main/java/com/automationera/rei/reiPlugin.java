@@ -59,7 +59,7 @@ public class reiPlugin implements REIClientPlugin {
             List<Item> inputs = entry.getValue().get(1);
             if (!outputs.isEmpty()) {
                 // Use a dummy MachineRecipe (AIR -> first output) to represent machine outputs
-                registry.add(new MachineReiRecipe(new MachineRecipe(Items.AIR, outputs.get(0)), key, entry.getValue()));
+                registry.add(new MachineReiRecipe(new MachineRecipe(Items.AIR, outputs.getFirst()), key, entry.getValue()));
             }
             // Note: The complementary input-focused machine recipe (MachineEmiRecipe in EMI) is omitted in REI for simplicity
         }
@@ -70,11 +70,11 @@ public class reiPlugin implements REIClientPlugin {
             List<Item> requirements = entry.getValue().get(1);
             if (!offers.isEmpty()) {
                 // Villager offers (output) for emerald
-                registry.add(new TradeReiRecipe(new MachineRecipe(Items.EMERALD, offers.get(0)), key + "_in", entry.getValue()));
+                registry.add(new TradeReiRecipe(new MachineRecipe(Items.EMERALD, offers.getFirst()), key + "_in", entry.getValue()));
             }
             if (!requirements.isEmpty()) {
                 // Villager accepts item for emerald (emerald as output)
-                registry.add(new TradeReiRecipe(new MachineRecipe(requirements.get(0), Items.EMERALD), key + "_out", entry.getValue()));
+                registry.add(new TradeReiRecipe(new MachineRecipe(requirements.getFirst(), Items.EMERALD), key + "_out", entry.getValue()));
             }
         }
         // Register tutorial entries
@@ -83,7 +83,7 @@ public class reiPlugin implements REIClientPlugin {
             List<Item> outputItems = entry.getValue();
             if (!outputItems.isEmpty()) {
                 // Use first item as representative (input/output are the same dummy for tutorial)
-                Item repr = outputItems.get(0);
+                Item repr = outputItems.getFirst();
                 registry.add(new TutorialReiRecipe(new MachineRecipe(repr, repr), key, outputItems));
             }
         }
