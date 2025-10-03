@@ -2,17 +2,18 @@ package com.automationera;
 
 import com.automationera.keybinding.ModKeyBinding;
 import com.automationera.ui.AtlasCache;
-import com.automationera.ui.TutorialManager;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.minecraft.client.texture.MissingSprite;
 import net.minecraft.client.texture.SpriteAtlasTexture;
-import net.minecraft.client.texture.atlas.Atlases;
 import net.minecraft.client.util.SpriteIdentifier;
 import net.minecraft.resource.ResourceType;
 import net.minecraft.util.Identifier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.gen.Accessor;
+
 
 public class AutomationeraClient implements ClientModInitializer {
     private static final Logger LOGGER = LoggerFactory.getLogger("AutomationEraClient");
@@ -22,15 +23,16 @@ public class AutomationeraClient implements ClientModInitializer {
         net.fabricmc.fabric.api.resource.ResourceManagerHelper
                 .get(ResourceType.CLIENT_RESOURCES)
                 .registerReloadListener(AtlasCache.INSTANCE);
+
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
             if (!AtlasCache.DIRTY) return;
 
             var bmm   = client.getBakedModelManager();
             SpriteAtlasTexture atlas;
             try{
-                atlas = bmm.getAtlas(Atlases.BLOCKS);
+                atlas = bmm.getAtlas(Identifier.of("automationera", "ae_block.json"));//SpriteAtlasManager.atlasees<Map>键为null
             } catch (Exception e) {
-                LOGGER.warn("THROW ERROR");
+                LOGGER.warn("THROW ERROR:{}", String.valueOf(e));
                 return;
             }
 
@@ -39,10 +41,10 @@ public class AutomationeraClient implements ClientModInitializer {
             AtlasCache.BLOCKS_VIEW = atlas.getGlTextureView();
 
             var texId  = Identifier.of("automationera","block/water_still");
-            var sprite = new SpriteIdentifier(Atlases.BLOCKS, texId).getSprite();
+            var sprite = new SpriteIdentifier(Identifier.of("automationera", "ae_block.json"), texId).getSprite();
 
             if (sprite.getContents().getId().equals(MissingSprite.getMissingSpriteId())) {
-                LOGGER.info("atlas not ready");
+                LOGGER.warn("atlas not ready");
                 return;
             }
 

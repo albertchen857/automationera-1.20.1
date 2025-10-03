@@ -166,7 +166,7 @@ public class TutorialManager {
                                        Identifier texture, float y1, float y2, float alpha, int r,int g, int b) {
         Sprite sprite = (AtlasCache.FLUID_SPRITE != null)
                 ? AtlasCache.FLUID_SPRITE
-                : new SpriteIdentifier(Atlases.BLOCKS, texture).getSprite();
+                : new SpriteIdentifier(Identifier.of("automationera", "atlases/ae_block.json"), texture).getSprite();
 
         float u0 = sprite.getMinU();
         float u1 = sprite.getMaxU();
