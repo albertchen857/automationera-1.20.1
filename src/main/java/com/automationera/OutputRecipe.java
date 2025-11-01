@@ -1,14 +1,16 @@
 package com.automationera;
 
+import com.automationera.ui.TutorialGroupScreen.SelectionBox;
+import com.automationera.ui.TutorialGroupScreen.MachineInfo;
 import net.minecraft.item.Item;
 import net.minecraft.item.Items;
+import net.minecraft.text.Text;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 public class OutputRecipe {
-
     public Map<String, List<Item>> OutputTemplate() {
         Map<String, List<Item>> Template = new HashMap<>();
         Template.put("WOOL", List.of(
@@ -728,7 +730,7 @@ public class OutputRecipe {
         ore.put("lichen", List.of(List.of(
                 Items.GLOW_LICHEN
         ), List.of(Items.BONE_MEAL)));
-        ore.put("load", List.of(List.of(), List.of(Items.MINECART)));
+        ore.put("load", List.of(List.of(Items.MINECART,Items.OBSIDIAN), List.of()));
         ore.put("mooshroom", List.of(List.of(
                 Items.BEEF,
                 Items.COOKED_BEEF,
@@ -802,7 +804,7 @@ public class OutputRecipe {
         ore.put("tnt3d", List.of(List.of(
                 Items.TNT
         ), List.of()));
-        ore.put("unpack", List.of(List.of(), List.of(Items.SHULKER_BOX)));
+        ore.put("unpack", List.of(List.of(Items.SHULKER_BOX), List.of()));
         ore.put("vine", List.of(List.of(
                 Items.VINE
         ), List.of(Items.SHEARS)));
@@ -999,5 +1001,119 @@ public class OutputRecipe {
                 List.of("SAPLING"),
                 List.of()));
         return Ing;
+    }
+    public static final List<MachineInfo> factoryMachines = List.of(
+            new MachineInfo("iron", Items.IRON_BLOCK, Text.translatable("tutorial.iron.title"), List.of(
+                    List.of(),
+                    List.of(new SelectionBox(4,4,4,9,6,1),new SelectionBox(4,4,26,9,6,29)),
+                    List.of(new SelectionBox(13,19,1,1,7,4),new SelectionBox(13,19,26,1,7,29)),
+                    List.of(new SelectionBox(0,20,0,14,28,30)),
+                    List.of(new SelectionBox(5,23,9,9,26,21)),
+                    List.of(new SelectionBox(5,24,7,9,27,23)),
+                    List.of(new SelectionBox(7,23,15,7,23,15))
+            ),true),
+            new MachineInfo("stone", Items.COBBLESTONE, Text.translatable("tutorial.stone.title"), List.of(
+                    List.of(),
+                    List.of(new SelectionBox(4,2,1,12,3,10)),
+                    List.of(new SelectionBox(4,3,2,12,6,10)),
+                    List.of(new SelectionBox(7,7,7,10,7,5)),
+                    List.of(new SelectionBox(6,2,5,3,3,3)),
+                    List.of(new SelectionBox(6,3,5,3,4,3)),
+                    List.of(new SelectionBox(10,10,3,8,12,6))
+            ),true),
+            new MachineInfo("wood", Items.OAK_LOG, Text.translatable("tutorial.wood.title"), List.of(
+                    List.of(),
+                    List.of(new SelectionBox(14,3,8,10,5,4)),
+                    List.of(new SelectionBox(11,4,12,11,11,0)),
+                    List.of(new SelectionBox(10,20,13,14,12,7)),
+                    List.of(new SelectionBox(11,18,9,3,21,5))
+            ),true),
+            new MachineInfo("ice", Items.ICE, Text.translatable("tutorial.ice.title"), List.of(),false),
+            new MachineInfo("rail", Items.RAIL, Text.translatable("tutorial.rail.title"), List.of(),false),
+            new MachineInfo("concrete", Items.WHITE_CONCRETE, Text.translatable("tutorial.concrete.title"), List.of(),true),
+            new MachineInfo("furnace", Items.FURNACE, Text.translatable("tutorial.furnace.title"), List.of(
+                    List.of(),
+                    List.of(),
+                    List.of(new SelectionBox(0,2,15,15,3,0),new SelectionBox(9,1,10,11,2,13)),
+                    List.of(new SelectionBox(0,3,15,15,5,0)),
+                    List.of(new SelectionBox(0,4,15,9,9,11)),
+                    List.of(new SelectionBox(4,9,11,2,6,15))
+            ),true),
+            new MachineInfo("hook", Items.TRIPWIRE_HOOK, Text.translatable("tutorial.hook.title"), List.of(),true),
+            new MachineInfo("lantern", Items.JACK_O_LANTERN, Text.translatable("tutorial.lantern.title"), List.of(),true),
+            new MachineInfo("string", Items.STRING, Text.translatable("tutorial.string.title"), List.of(),true)
+    );
+    public static final List<MachineInfo> farmMachines = List.of(
+            new MachineInfo("mob", Items.ROTTEN_FLESH, Text.translatable("tutorial.mob.title"), List.of(
+                    List.of(),
+                    List.of(new SelectionBox(0,2,11,42,4,10)),
+                    List.of(new SelectionBox(40,4,10,50,7,23),new SelectionBox(34,5,4,4,5,25)),
+                    List.of(new SelectionBox(4,6,3,34,8,26),new SelectionBox(40,7,14,44,9,25)),
+                    List.of(new SelectionBox(45,9,24,40,7,10),new SelectionBox(34,9,3,4,9,26)),
+                    List.of(new SelectionBox(34,9,3,4,11,26)),
+                    List.of(new SelectionBox(0,12,28,38,13,1)),
+                    List.of(new SelectionBox(15,14,20,24,15,10))
+            ),true),
+            new MachineInfo("pig", Items.COOKED_PORKCHOP, Text.translatable("tutorial.pig.title"), List.of(),true),
+            new MachineInfo("farm", Items.CARROT, Text.translatable("tutorial.farm.title"), List.of(),true),
+            new MachineInfo("sugarcane", Items.SUGAR_CANE, Text.translatable("tutorial.sugarcane.title"), List.of(),false),
+            new MachineInfo("bamboo", Items.BAMBOO, Text.translatable("tutorial.bamboo.title"), List.of(),false),
+            new MachineInfo("bee", Items.HONEYCOMB, Text.translatable("tutorial.bee.title"), List.of(
+                    List.of(),
+                    List.of(),
+                    List.of(new SelectionBox(5,1,4,1,1,8))
+            ),true),
+            new MachineInfo("cactus", Items.CACTUS, Text.translatable("tutorial.cactus.title"), List.of(
+                    List.of(),
+                    List.of(new SelectionBox(2,4,8,8,7,2)),
+                    List.of(new SelectionBox(0,8,10,10,13,0))
+            ),true),
+            //new MachineInfo("flower", Items.WHITE_CARPET, Text.translatable("tutorial.carpet.title"), List.of(),true),
+            new MachineInfo("ocean", Items.PRISMARINE_SHARD, Text.translatable("tutorial.ocean.title"), List.of(
+                    List.of(new SelectionBox(0,10,57,18,22,39),new SelectionBox(0,10,0,18,22,18),new SelectionBox(57,10,0,39,22,18),new SelectionBox(57,10,57,39,22,39)),
+                    List.of(),
+                    List.of(new SelectionBox(18,14,18,0,16,0)),
+                    List.of(new SelectionBox(0,16,18,18,17,0)),
+                    List.of(new SelectionBox(6,17,12,12,53,6)),
+                    List.of(new SelectionBox(6,53,13,12,17,13)),
+                    List.of(new SelectionBox(8,55,14,14,57,6))
+            ),true),
+            new MachineInfo("sheep", Items.WHITE_WOOL, Text.translatable("tutorial.sheep.title"), List.of(),true),
+            new MachineInfo("snow", Items.SNOWBALL, Text.translatable("tutorial.snow.title"), List.of(),true)
+    );
+    public static final List<MachineInfo> specialMachines = List.of(
+            new MachineInfo("carpet", Items.WHITE_CARPET, Text.translatable("tutorial.carpet.title"), List.of(),true),
+            new MachineInfo("load", Items.MINECART, Text.translatable("tutorial.load.title"), List.of(
+                    List.of(new SelectionBox(3,1,2,3,1,2)),
+                    List.of(),
+                    List.of(),
+                    List.of()
+            ),true)
+    );
+    public static Map<String,List<?>> ConvertMap(){
+        Map<String,List<?>> cm = new HashMap<>();
+        cm.put("iron",List.of("factory",0));
+        cm.put("stone",List.of("factory",1));
+        cm.put("wood",List.of("factory",2));
+        cm.put("ice",List.of("factory",3));
+        cm.put("rail",List.of("factory",4));
+        cm.put("concrete",List.of("factory",5));
+        cm.put("furnace",List.of("factory",6));
+        cm.put("hook",List.of("factory",7));
+        cm.put("lantern",List.of("factory",8));
+        cm.put("string",List.of("factory",9));
+        cm.put("mob",List.of("farm",0));
+        cm.put("pig",List.of("farm",1));
+        cm.put("farm",List.of("farm",2));
+        cm.put("sugarcane",List.of("farm",3));
+        cm.put("bamboo",List.of("farm",4));
+        cm.put("honey",List.of("farm",5));
+        cm.put("cactus",List.of("farm",6));
+        cm.put("marine",List.of("farm",7));
+        cm.put("sheep",List.of("farm",8));
+        cm.put("snow",List.of("farm",9));
+        cm.put("carpet",List.of("special",0));
+        cm.put("load", List.of("special",1));
+        return cm;
     }
 }

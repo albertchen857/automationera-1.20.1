@@ -68,7 +68,7 @@ public class MachineReiRecipe implements Display {
     public List<EntryIngredient> getOutputEntries() {
         if (allOutputs != null && !allOutputs.isEmpty()) {
             // Show only the representative output (first in list)
-            Item firstOutput = allOutputs.get(0);
+            Item firstOutput = allOutputs.getFirst();
             return List.of(EntryIngredients.of(new ItemStack(firstOutput)));
         }
         // Fallback: if no outputs list, use representative output

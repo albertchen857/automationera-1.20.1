@@ -23,6 +23,9 @@
 		],
 		"rei_common": [
 			"com.automationera.rei.reiPlugin"
+		],
+		"client": [
+			"com.automationera.AutomationeraClient"
 		]
 	},
 	"mixins": [

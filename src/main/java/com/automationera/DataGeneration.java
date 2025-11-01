@@ -12,13 +12,13 @@ public class DataGeneration implements DataGeneratorEntrypoint {
     @Override
     public void onInitializeDataGenerator(FabricDataGenerator fabricDataGenerator) {
         // 只用 Criteria.register（不需要 Registry.register）
-        net.minecraft.advancement.criterion.Criteria.register(
-                com.automationera.advance.FullStackCriterion.ID.toString(),
-                com.automationera.advance.FullStackCriterion.INSTANCE
+        Criteria.register(
+                FullStackCriterion.ID.toString(),
+                FullStackCriterion.INSTANCE
         );
-        net.minecraft.advancement.criterion.Criteria.register(
-                com.automationera.advance.FullShulkerBoxCriterion.ID.toString(),
-                com.automationera.advance.FullShulkerBoxCriterion.INSTANCE
+        Criteria.register(
+                FullShulkerBoxCriterion.ID.toString(),
+                FullShulkerBoxCriterion.INSTANCE
         );
 
         FabricDataGenerator.Pack pack = fabricDataGenerator.createPack();

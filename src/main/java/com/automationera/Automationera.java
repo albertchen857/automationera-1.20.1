@@ -1,6 +1,7 @@
 package com.automationera;
 
 import com.automationera.advance.*;
+import com.automationera.keybinding.ModKeyBinding;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.entity.event.v1.ServerPlayerEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
@@ -221,7 +222,7 @@ public class Automationera implements ModInitializer {
 		ServerTickEvents.START_SERVER_TICK.register(server -> {
 			for (ServerPlayerEntity player : server.getPlayerManager().getPlayerList()) {
 				lastTickStartTime = System.nanoTime();
-				if (server.getTicks() % 36000 == 0){ //10min
+				if (server.getTicks() % 216000 == 0){ //1h
 					BlockPos pos = player.getBlockPos();
 					//LOGGER.info("afk {}/{}/{}",lastpos, new int[]{pos.getX(), pos.getZ()},Arrays.equals(lastpos, new int[]{pos.getX(), pos.getZ()}));
 					if (Arrays.equals(lastpos, new int[]{pos.getX(), pos.getZ()})){
@@ -229,8 +230,8 @@ public class Automationera implements ModInitializer {
 						if (adv != null) {
 							player.getAdvancementTracker().grantCriterion(adv, "afk");
 						}
-						player.sendMessage(Text.literal("You already AFK "+(afkperiod*0.5)+" Hours"));
 						afkperiod+=1;
+						player.sendMessage(Text.literal("You already AFK "+(afkperiod)+" Hours"));
 						afk = true;
 					}else{
 						afkperiod = 0;
@@ -253,17 +254,6 @@ public class Automationera implements ModInitializer {
 							AdvancementEntry adv = server.getAdvancementLoader().get(Identifier.of(MOD_ID+":netherperimeter"));
 							if (adv != null) {
 								player.getAdvancementTracker().grantCriterion(adv, "netherperimeter");
-							}
-						}
-					}else{
-						ServerWorld world = player.getServerWorld();
-						boolean peaceful = world.getDifficulty() == Difficulty.PEACEFUL;
-						int mobCount = world.getEntitiesByClass(MobEntity.class, new Box(player.getBlockPos()).expand(64), Entity::isAlive).size();
-						long timeOfDay = world.getTimeOfDay() % 24000;
-						if (!peaceful && mobCount == 0 && timeOfDay >= 13000 && timeOfDay <= 23000) {
-							AdvancementEntry adv = server.getAdvancementLoader().get(Identifier.of(MOD_ID+":fakepeaceful"));
-							if (adv != null) {
-								player.getAdvancementTracker().grantCriterion(adv, "fakepeaceful");
 							}
 						}
 					}
@@ -359,7 +349,7 @@ public class Automationera implements ModInitializer {
 						int x = Math.abs(pos.getX()-lastpos[0]);
 						int y = Math.abs(pos.getZ()-lastpos[1]);
 						long distance = (long)Math.sqrt(x*x+y*y);
-						LOGGER.info("distance:{}, {}", distance, lastpos);
+						//LOGGER.info("distance:{}, {}", distance, lastpos);
 						if (distance > 10000){
 							AdvancementEntry adv = server.getAdvancementLoader().get(Identifier.of(MOD_ID+":fastesttravel"));
 							if (adv != null) {
@@ -375,7 +365,7 @@ public class Automationera implements ModInitializer {
 					lastpos = new int[]{pos.getX(), pos.getZ()};
 
 					double mspt = Arrays.stream(tickTimes).average().orElse(0.0);
-					LOGGER.info("MSPT:{}, ONLINE:{}",mspt,online);
+					//LOGGER.info("MSPT:{}, ONLINE:{}",mspt,online);
 					if (mspt > 100 && server.getTicks()>600) {
 						AdvancementEntry adv = server.getAdvancementLoader().get(Identifier.of(MOD_ID+":stuckserver"));
 						if (adv != null) {
@@ -412,27 +402,12 @@ public class Automationera implements ModInitializer {
 						if (adv != null) {
 							player.getAdvancementTracker().grantCriterion(adv, "worldeater");
 						}
-					}else if (entityCount  > 10) {
+					}else if (entityCount  > 100) {
 						AdvancementEntry adv = server.getAdvancementLoader().get(Identifier.of(MOD_ID+":tntquarry"));
 						if (adv != null) {
 							player.getAdvancementTracker().grantCriterion(adv, "tntquarry");
 						}
 					}
-
-					BlockPos posB = player.getBlockPos();
-					long timeOfDay = world.getTimeOfDay() % 24000;
-					int lightLevel = world.getLightLevel(LightType.BLOCK, posB);
-					int skyLevel = world.getLightLevel(LightType.SKY, posB);
-					int real = world.getLightLevel(posB);
-					if (real == 0 && lightLevel == 0 && skyLevel == 0 && player.getWorld().getRegistryKey().equals(World.OVERWORLD) && timeOfDay>0 && timeOfDay<12000 && world.isSkyVisible(posB.up())) {
-						AdvancementEntry adv = server.getAdvancementLoader().get(Identifier.of(MOD_ID+":lightsuppression"));
-						if (adv != null) {
-							player.getAdvancementTracker().grantCriterion(adv, "lightsuppression");
-						}
-					}
-
-
-
 				}
 			}
 		});
@@ -496,7 +471,6 @@ public class Automationera implements ModInitializer {
 
 	}
 
-
 	private void checkPlayerStacks(ServerPlayerEntity player, Item item, int requiredStacks) {
 		int fullStackCount = 0;
 		int stackSize = item.getMaxCount();
@@ -538,8 +512,6 @@ public class Automationera implements ModInitializer {
 
 		Map<Identifier, Resource> resMap = ((ReloadableResourceManagerImpl) MinecraftClient.getInstance().getResourceManager())
 				.findResources("textures/rei/machine", id -> true);
-		LOGGER.info("Found machine textures: " + resMap.keySet());
-
 	}
 
 	public boolean isChunkAirSpace(World world, ChunkPos chunkPos, int miny) {

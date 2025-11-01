@@ -64,12 +64,12 @@ public class TradeRecipeCategory implements DisplayCategory<TradeReiRecipe> {
         if (Objects.equals(key, "trade_main")) {
             widgets.add(Widgets.createLabel(new Point(originX + 5, originY + 5),
                             Text.literal(I18n.translate("emi.automationera.circuit.title")))
-                    .color(0xE71B1B, 0xE71B1B).noShadow());
+                    .color(0xFFE71B1B, 0xFFE71B1B).noShadow());
             String descr = I18n.translate("emi.automationera.circuit.descr");
             for (int i = 0; i <= descr.length(); i += textLen) {
                 String line = descr.substring(i, Math.min(descr.length(), i + textLen));
                 widgets.add(Widgets.createLabel(new Point(originX + 5, originY + 20 + (i / textLen) * 8),
-                        Text.literal(line)).color(0x404040, 0x404040).noShadow().leftAligned());
+                        Text.literal(line)).color(0xFF404040, 0xFF404040).noShadow().leftAligned());
             }
             widgets.add(Widgets.createTexturedWidget(
                     reiPlugin.ICON_TEXTURE,
@@ -88,7 +88,7 @@ public class TradeRecipeCategory implements DisplayCategory<TradeReiRecipe> {
         // Standard villager trade display
         widgets.add(Widgets.createLabel(new Point(originX + 5, originY + 5),
                         Text.literal(I18n.translate("emi.automationera." + key + ".title")))
-                .color(0x404040, 0x404040).noShadow().leftAligned());
+                .color(0xFF404040, 0xFF404040).noShadow().leftAligned());
 
         Widget wikiButton = Widgets.createButton(new Rectangle(originX + 128, originY + 2, 32, 12), Text.literal(""))
                 .text(Text.of("WIKI"))
@@ -101,7 +101,7 @@ public class TradeRecipeCategory implements DisplayCategory<TradeReiRecipe> {
         for (int i = 0; i <= descr.length(); i += textLen) {
             String line = descr.substring(i, Math.min(descr.length(), i + textLen));
             widgets.add(Widgets.createLabel(new Point(originX + 5, originY + 20 + (i / textLen) * 8),
-                    Text.literal(line)).color(0x404040, 0x404040).noShadow().leftAligned());
+                    Text.literal(line)).color(0xFF404040, 0xFF404040).noShadow().leftAligned());
         }
         // Villager image corresponding to profession (job)
         String job = key.contains("_") ? key.split("_")[0] : key;
