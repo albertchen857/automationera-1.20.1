@@ -165,13 +165,12 @@ public class TutorialGroupScreen extends Screen {
         ItemRenderer ir = mc.getItemRenderer();
         VertexConsumerProvider.Immediate vcp = mc.getBufferBuilders().getEntityVertexConsumers();
 
-        net.minecraft.client.render.DiffuseLighting.enableGuiDepthLighting();
         GlStateManager._enableDepthTest();
         GlStateManager._enablePolygonOffset();
         GlStateManager._polygonOffset(-2f, -2f);
 
         final int FULL_BRIGHT = LightmapTextureManager.pack(15, 15);
-        MatrixStack matrices = ctx.getMatrices();
+        MatrixStack matrices = new MatrixStack();
 
         for (int i = 0; i < BLOCK_LINES && (i + blockScroll) < total; i++) {
             var entry = blockList.get(i + blockScroll);
@@ -208,7 +207,6 @@ public class TutorialGroupScreen extends Screen {
         vcp.draw();
 
         GlStateManager._disablePolygonOffset();
-        net.minecraft.client.render.DiffuseLighting.disableGuiDepthLighting();
 
         if (maxScroll > 0) {
             int barX = x + listW - 6, barY = y0, barW = 4, barH = height;
