@@ -137,7 +137,7 @@ public class TutorialManager {
         GlStateManager._depthMask(true);
         GlStateManager._enableCull();
         GlStateManager._enableBlend();
-
+        LOGGER.info(brm + "\n" + immediate + "\n" + mc + "\n" + nbt);
         for (int i = 0; i < blocks.size(); i++) {
             NbtCompound blk = blocks.getCompoundOrEmpty(i);
             NbtList pos = blk.getList("pos").orElse(new NbtList());
