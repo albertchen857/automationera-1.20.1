@@ -3,11 +3,19 @@ package com.automationera.ui;
 import com.automationera.OutputRecipe;
 import com.automationera.basic.ExportFile;
 
+import com.mojang.blaze3d.opengl.GlStateManager;
+import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.widget.ButtonWidget;
 import net.minecraft.client.gui.widget.NarratedMultilineTextWidget;
 import net.minecraft.client.gui.widget.TextWidget;
+import net.minecraft.client.render.LightmapTextureManager;
+import net.minecraft.client.render.OverlayTexture;
+import net.minecraft.client.render.VertexConsumerProvider;
+import net.minecraft.client.render.item.ItemRenderer;
+import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.item.Item;
+import net.minecraft.item.ItemDisplayContext;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
 import net.minecraft.nbt.NbtCompound;
@@ -27,6 +35,7 @@ public class TutorialGroupScreen extends Screen {
     public static final org.slf4j.Logger LOGGER = LoggerFactory.getLogger("AutomationEraTutorial");
 
     private IsometricRenderState renderState;
+    private NbtCompound blockListNbtCache;
     private List<MachineInfo> choose = List.of();
 
     private final List<AnalysisList.Entry> blockListExternal;
@@ -128,25 +137,21 @@ public class TutorialGroupScreen extends Screen {
         if (machine != null) {
             NbtCompound structureNbt = TutorialManager.loadNbtFromResource(machine.id, currentStep);
             TutorialManager TM = new TutorialManager();
-            TM.renderStructure3D(ctx, structureNbt, currentStep, renderState, width, height, width, machine.selectbox);
-            /*if (blockListExternal != null) {
+            TutorialManager.renderStructure3D(ctx, structureNbt, currentStep, renderState, width, height, width, machine.selectbox);
+            if (blockListExternal != null) {
                 blockList = blockListExternal; //execute
-            } else
-            if (structureNbt != null && (blockList == null || !structureNbt.equals(blockListNbtCache))) {
+            } else if (structureNbt != null && (blockList == null || !structureNbt.equals(blockListNbtCache))) {
                 blockList = new AnalysisList(structureNbt).getResult(); //null
                 blockListNbtCache = structureNbt == null ? null : structureNbt.copy();
             }
-            renderBlockList(ctx);*///导致factory页未响应
+            renderBlockList(ctx);
         }
         if (autoRotate) renderState.addRotation(rotateSpeed);
         renderUI();
     }
 
     private void renderBlockList(DrawContext ctx) {
-        if (blockList == null || blockList.isEmpty()) {
-            LOGGER.warn("Render BlockList Null");
-            return;
-        }
+        if (blockList == null || blockList.isEmpty()) return;
 
         int listW = 110, iconSize = 12;
         int x = this.width - listW - 10, y0 = 10, height = BLOCK_LINES * (iconSize + 2);
@@ -154,47 +159,64 @@ public class TutorialGroupScreen extends Screen {
 
         int total = blockList.size();
         int maxScroll = Math.max(0, total - BLOCK_LINES);
-        for (int i = 0; i < BLOCK_LINES && (i + blockScroll) < total; i++) {
-            AnalysisList.Entry entry = blockList.get(i + blockScroll);
-            if (entry.stack.isOf(Items.BARRIER)) {
-                i--;
-                continue;
-            }
+        float fontSize = 0.75f;
 
+        MinecraftClient mc = MinecraftClient.getInstance();
+        ItemRenderer ir = mc.getItemRenderer();
+        VertexConsumerProvider.Immediate vcp = mc.getBufferBuilders().getEntityVertexConsumers();
+
+        GlStateManager._enableDepthTest();
+        GlStateManager._enablePolygonOffset();
+        GlStateManager._polygonOffset(-2f, -2f);
+
+        final int FULL_BRIGHT = LightmapTextureManager.pack(15, 15);
+        MatrixStack matrices = new MatrixStack();
+
+        for (int i = 0; i < BLOCK_LINES && (i + blockScroll) < total; i++) {
+            var entry = blockList.get(i + blockScroll);
+            if (entry.stack.equals(new ItemStack(Items.BARRIER))) continue;
             int y = y0 + i * (iconSize + 2);
-            drawRow(ctx, x, y, listW, iconSize / 16f, entry, iconSize);
+
+            matrices.push();
+            matrices.translate(x + 8.0f, y + 8.0f, 0f);
+            matrices.scale(iconSize, iconSize, 16);
+            matrices.scale(1f, -1f, 1f);
+
+            ir.renderItem(
+                    entry.stack,
+                    ItemDisplayContext.GUI,
+                    FULL_BRIGHT,
+                    OverlayTexture.DEFAULT_UV,
+                    matrices, vcp, mc.world, 0
+            );
+            matrices.pop();
+
+            matrices.push();
+            matrices.translate(x + iconSize + 6, y + 2, 0);
+            matrices.scale(fontSize, fontSize, 1.0f);
+            ctx.drawText(this.textRenderer, entry.displayName, 0, 0, 0xEBEBEB, false);
+            matrices.pop();
+
+            matrices.push();
+            matrices.translate(x + listW - 45, y + 2, 0);
+            matrices.scale(fontSize, fontSize, 1.0f);
+            ctx.drawText(this.textRenderer, entry.countBoxGroup(), 0, 0, 0xFF512C, false);
+            matrices.pop();
         }
 
+        vcp.draw();
+
+        GlStateManager._disablePolygonOffset();
+
         if (maxScroll > 0) {
-            int barX = x + listW - 6, barW = 4; //y0=barY, height=barH
-            ctx.fill(barX, y0, barX + barW, y0 + height, 0x22000000);
-            int sliderH = Math.max(12, height * BLOCK_LINES / total);
-            int sliderY = y0 + (height - sliderH) * blockScroll / maxScroll;
+            int barX = x + listW - 6, barY = y0, barW = 4, barH = height;
+            ctx.fill(barX, barY, barX + barW, barY + barH, 0x22000000);
+            int sliderH = Math.max(12, barH * BLOCK_LINES / total);
+            int sliderY = barY + (barH - sliderH) * blockScroll / maxScroll;
             ctx.fill(barX + 1, sliderY, barX + barW - 1, sliderY + sliderH, 0xFFAAAAAA);
         }
     }
 
-    private void drawRow(DrawContext ctx, int x, int y, int listW, float scale, AnalysisList.Entry entry, int iconSize) {
-        var m2d = ctx.getMatrices();
-        m2d.pushMatrix();
-        m2d.translate(x + 1, y + 1);
-        m2d.scale(scale, scale);
-        ctx.drawItem(entry.stack, 0, 0);
-        m2d.popMatrix();
-
-        m2d.pushMatrix();
-        m2d.translate(x + iconSize + 6, y + 2);
-        m2d.scale(0.75f, 0.75f);
-        ctx.drawText(this.textRenderer, entry.displayName, 0, 0, 0xFFEBEBEB, false); // ARGB 不透明
-        m2d.popMatrix();
-
-        String countText = entry.countBoxGroup();
-        m2d.pushMatrix();
-        m2d.translate(x + listW - 45, y + 2);
-        m2d.scale(0.75f, 0.75f);
-        ctx.drawText(this.textRenderer, countText, 0, 0, 0xFFFF512C, false);
-        m2d.popMatrix();
-    }
 
     public void renderUI() {
         this.addDrawableChild(ButtonWidget.builder(Text.translatable("tutorial.ui.prev"),

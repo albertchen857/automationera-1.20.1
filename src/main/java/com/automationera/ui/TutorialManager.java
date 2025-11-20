@@ -1,32 +1,22 @@
 package com.automationera.ui;
 
-import com.automationera.AutomationeraClient;
 import com.mojang.blaze3d.opengl.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockRenderType;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
-import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.render.*;
 import net.minecraft.client.render.block.BlockRenderManager;
 
-import net.minecraft.client.texture.AbstractTexture;
-import net.minecraft.client.texture.MissingSprite;
 import net.minecraft.client.texture.Sprite;
-import net.minecraft.client.texture.SpriteAtlasTexture;
-import net.minecraft.client.texture.atlas.Atlases;
-import net.minecraft.client.util.SpriteIdentifier;
 import net.minecraft.client.util.math.MatrixStack;
-import net.minecraft.fluid.FluidState;
-import net.minecraft.fluid.Fluids;
 import net.minecraft.nbt.*;
 import net.minecraft.registry.Registries;
 import net.minecraft.resource.Resource;
 import net.minecraft.resource.ResourceManager;
-import net.minecraft.resource.ResourceType;
 import net.minecraft.state.property.Property;
 import net.minecraft.util.Identifier;
 import org.joml.Matrix4f;
@@ -95,7 +85,7 @@ public class TutorialManager {
         BlockRenderManager brm = mc.getBlockRenderManager();
         VertexConsumerProvider.Immediate immediate = mc.getBufferBuilders().getEntityVertexConsumers();
         var matrices = new MatrixStack();
-        List<BlockState> palette = new ArrayList<>();
+        /*List<BlockState> palette = new ArrayList<>();
         Optional<NbtList> optn = nbt.getList("palette");
         optn.ifPresent(nbtElements -> {
             for (int i = 0; i < optn.get().size(); i++)
@@ -131,14 +121,14 @@ public class TutorialManager {
         matrices.multiply(new Quaternionf().rotateY((float) Math.atan2(nx, nz)));//Normal Rotation
 
         matrices.scale((float)globalScale, (float)-globalScale, (float)globalScale);
-        matrices.translate(-dx, -dy, -dz);//center point
+        matrices.translate(-dx, -dy, -dz);*///center point
 
         GlStateManager._enableDepthTest();
         GlStateManager._depthMask(true);
         GlStateManager._enableCull();
         GlStateManager._enableBlend();
         LOGGER.info(brm + "\n" + immediate + "\n" + mc + "\n" + nbt);
-        for (int i = 0; i < blocks.size(); i++) {
+        /*for (int i = 0; i < blocks.size(); i++) {
             NbtCompound blk = blocks.getCompoundOrEmpty(i);
             NbtList pos = blk.getList("pos").orElse(new NbtList());
             int x = pos.getInt(0).orElse(0), y = pos.getInt(1).orElse(0), z = pos.getInt(2).orElse(0);
@@ -186,6 +176,9 @@ public class TutorialManager {
                 matrices.pop();
             }
         }
+
+         */
+        brm.renderBlockAsEntity(Blocks.BRICKS.getDefaultState(), matrices, immediate, 15728880, OverlayTexture.DEFAULT_UV);
         immediate.draw();
 
         matrices.push();
