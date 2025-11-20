@@ -32,6 +32,11 @@ public class MachineEntryList extends EntryListWidget<MachineEntryList.Entry> {
 
     }
 
+    @Override
+    protected int getScrollbarX() {
+        return this.getRowRight()-2;
+    }
+
     public static class Entry extends EntryListWidget.Entry<Entry> {
         private final MachineEntryList parentList;
         private final int index;

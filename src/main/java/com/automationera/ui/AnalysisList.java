@@ -21,14 +21,11 @@ public class AnalysisList {
             this.count = count;
         }
         public String countBoxGroup() {
-            int boxSize = 64*27;
-            int groupSize = 64;
-            int boxes = count / boxSize;
-            int boxRemain = count % boxSize;
-            int groups = boxRemain / groupSize;
-            int groupRemain = boxRemain % groupSize;
+            int Remain = count % 64;
+            int groups = count / 64;
+            int groupRemain = Remain % 64;
             // 格式如：128/2B0S0
-            return count + "/" + boxes + "B " + groups + "S " + groupRemain;
+            return count + "/" + groups + "S" + groupRemain;
         }
     }
     private final List<Entry> result;

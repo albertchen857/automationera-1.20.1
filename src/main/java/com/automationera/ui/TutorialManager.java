@@ -123,11 +123,12 @@ public class TutorialManager {
         matrices.scale((float)globalScale, (float)-globalScale, (float)globalScale);
         matrices.translate(-dx, -dy, -dz);*///center point
 
-        GlStateManager._enableDepthTest();
+        /*GlStateManager._enableDepthTest();
         GlStateManager._depthMask(true);
         GlStateManager._enableCull();
         GlStateManager._enableBlend();
-        LOGGER.info(brm + "\n" + immediate + "\n" + mc + "\n" + nbt);
+
+         */
         /*for (int i = 0; i < blocks.size(); i++) {
             NbtCompound blk = blocks.getCompoundOrEmpty(i);
             NbtList pos = blk.getList("pos").orElse(new NbtList());
@@ -178,7 +179,7 @@ public class TutorialManager {
         }
 
          */
-        brm.renderBlockAsEntity(Blocks.BRICKS.getDefaultState(), matrices, immediate, 15728880, OverlayTexture.DEFAULT_UV);
+        brm.renderBlockAsEntity(Blocks.BRICKS.getDefaultState(), matrices, immediate, 0xFFF000F0, OverlayTexture.DEFAULT_UV);
         immediate.draw();
 
         matrices.push();
@@ -190,10 +191,13 @@ public class TutorialManager {
             }
         }
         immediate.draw();
+        /*
         GlStateManager._depthMask(true);
         GlStateManager._disableDepthTest();
         GlStateManager._disableCull();
         GlStateManager._disableBlend();
+
+         */
         matrices.pop();
     }
 
@@ -217,7 +221,7 @@ public class TutorialManager {
         VertexConsumer builder = consumers.getBuffer(RenderLayer.getGlintTranslucent());
 
         int a = Math.round(255 * alpha);
-        int light = 0xF000F0;
+        int light = 0xFFF000F0;
         int overlay = OverlayTexture.DEFAULT_UV;
 
         // 上面

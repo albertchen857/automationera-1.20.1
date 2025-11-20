@@ -136,7 +136,6 @@ public class TutorialGroupScreen extends Screen {
         super.render(ctx, mouseX, mouseY, delta);
         if (machine != null) {
             NbtCompound structureNbt = TutorialManager.loadNbtFromResource(machine.id, currentStep);
-            TutorialManager TM = new TutorialManager();
             TutorialManager.renderStructure3D(ctx, structureNbt, currentStep, renderState, width, height, width, machine.selectbox);
             if (blockListExternal != null) {
                 blockList = blockListExternal; //execute
@@ -151,65 +150,29 @@ public class TutorialGroupScreen extends Screen {
     }
 
     private void renderBlockList(DrawContext ctx) {
-        if (blockList == null || blockList.isEmpty()) return;
+        if (blockList == null || blockList.isEmpty()) {
+            LOGGER.warn("Blocklist null");
+            return;
+        }
 
-        int listW = 110, iconSize = 12;
-        int x = this.width - listW - 10, y0 = 10, height = BLOCK_LINES * (iconSize + 2);
+        int listW = 100, iconSize = 12;
+        int x = this.width - listW - 5, y0 = 10, height = BLOCK_LINES * (iconSize + 2);
         ctx.fill(x - 5, y0 - 4, x + listW + 8, y0 + height + 4, 0x40FFFFFF);
-
         int total = blockList.size();
         int maxScroll = Math.max(0, total - BLOCK_LINES);
-        float fontSize = 0.75f;
-
-        MinecraftClient mc = MinecraftClient.getInstance();
-        ItemRenderer ir = mc.getItemRenderer();
-        VertexConsumerProvider.Immediate vcp = mc.getBufferBuilders().getEntityVertexConsumers();
-
-        GlStateManager._enableDepthTest();
-        GlStateManager._enablePolygonOffset();
-        GlStateManager._polygonOffset(-2f, -2f);
-
-        final int FULL_BRIGHT = LightmapTextureManager.pack(15, 15);
-        MatrixStack matrices = new MatrixStack();
-
+        var fontSize = 0.75;
         for (int i = 0; i < BLOCK_LINES && (i + blockScroll) < total; i++) {
             var entry = blockList.get(i + blockScroll);
             if (entry.stack.equals(new ItemStack(Items.BARRIER))) continue;
             int y = y0 + i * (iconSize + 2);
+            ctx.drawItem(entry.stack,x, y);
+            ctx.drawText(this.textRenderer, entry.displayName, x + iconSize + 10, y + 4, 0xFFEBEBEB, true);
+            ctx.drawText(this.textRenderer, entry.countBoxGroup(), x + listW - 35, y + 7, 0xFFFF512C, true);
 
-            matrices.push();
-            matrices.translate(x + 8.0f, y + 8.0f, 0f);
-            matrices.scale(iconSize, iconSize, 16);
-            matrices.scale(1f, -1f, 1f);
-
-            ir.renderItem(
-                    entry.stack,
-                    ItemDisplayContext.GUI,
-                    FULL_BRIGHT,
-                    OverlayTexture.DEFAULT_UV,
-                    matrices, vcp, mc.world, 0
-            );
-            matrices.pop();
-
-            matrices.push();
-            matrices.translate(x + iconSize + 6, y + 2, 0);
-            matrices.scale(fontSize, fontSize, 1.0f);
-            ctx.drawText(this.textRenderer, entry.displayName, 0, 0, 0xEBEBEB, false);
-            matrices.pop();
-
-            matrices.push();
-            matrices.translate(x + listW - 45, y + 2, 0);
-            matrices.scale(fontSize, fontSize, 1.0f);
-            ctx.drawText(this.textRenderer, entry.countBoxGroup(), 0, 0, 0xFF512C, false);
-            matrices.pop();
         }
 
-        vcp.draw();
-
-        GlStateManager._disablePolygonOffset();
-
         if (maxScroll > 0) {
-            int barX = x + listW - 6, barY = y0, barW = 4, barH = height;
+            int barX = x + listW, barY = y0, barW = 4, barH = height;
             ctx.fill(barX, barY, barX + barW, barY + barH, 0x22000000);
             int sliderH = Math.max(12, barH * BLOCK_LINES / total);
             int sliderY = barY + (barH - sliderH) * blockScroll / maxScroll;
