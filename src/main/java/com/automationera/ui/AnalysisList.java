@@ -20,14 +20,7 @@ public class AnalysisList {
             this.count = count;
         }
         public String countBoxGroup() {
-            int boxSize = 64*27;
-            int groupSize = 64;
-            int boxes = count / boxSize;
-            int boxRemain = count % boxSize;
-            int groups = boxRemain / groupSize;
-            int groupRemain = boxRemain % groupSize;
-            // 格式如：128/2B0S0
-            return count + "/" + boxes + "B " + groups + "S " + groupRemain;
+            return count + "/" + count / 64 + "S " + count % 64;
         }
     }
     private final List<Entry> result;

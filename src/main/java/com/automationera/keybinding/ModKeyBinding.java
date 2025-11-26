@@ -37,25 +37,25 @@ public class ModKeyBinding {
         leftKey = KeyBindingHelper.registerKeyBinding(new KeyBinding(
                 "key.automationera.tutorial_rotate_left",
                 InputUtil.Type.KEYSYM,
-                GLFW.GLFW_KEY_A,
+                -1,
                 "category.automationera"
         ));
         rightKey = KeyBindingHelper.registerKeyBinding(new KeyBinding(
                 "key.automationera.tutorial_rotate_right",
                 InputUtil.Type.KEYSYM,
-                GLFW.GLFW_KEY_D,
+                -1,
                 "category.automationera"
         ));
         upKey = KeyBindingHelper.registerKeyBinding(new KeyBinding(
                 "key.automationera.tutorial_move_up",
                 InputUtil.Type.KEYSYM,
-                GLFW.GLFW_KEY_W,
+                -1,
                 "category.automationera"
         ));
         downKey = KeyBindingHelper.registerKeyBinding(new KeyBinding(
                 "key.automationera.tutorial_move_down",
                 InputUtil.Type.KEYSYM,
-                GLFW.GLFW_KEY_S,
+                -1,
                 "category.automationera"
         ));
         inKey = KeyBindingHelper.registerKeyBinding(new KeyBinding(
