@@ -41,7 +41,7 @@ public class TutorialGroupScreen extends Screen {
     private final List<AnalysisList.Entry> blockListExternal;
     private List<AnalysisList.Entry> blockList;
     private int blockScroll = 0;
-    private static final int BLOCK_LINES = 8;
+    private static final int BLOCK_LINES = 6;
 
     public TutorialGroupScreen(String group, int selectedMac, int currentStep, IsometricRenderState renderState, List<AnalysisList.Entry> blockListExternal) {
         super(Text.translatable("tutorial.group." + group));
@@ -150,69 +150,30 @@ public class TutorialGroupScreen extends Screen {
         renderUI();
     }
 
+
     private void renderBlockList(DrawContext ctx) {
         if (blockList == null || blockList.isEmpty()) return;
 
-        int listW = 110, iconSize = 12;
-        int x = this.width - listW - 10, y0 = 10, height = BLOCK_LINES * (iconSize + 2);
-        ctx.fill(x - 5, y0 - 4, x + listW + 8, y0 + height + 4, 0x40FFFFFF);
-
         int total = blockList.size();
+        int listW = 100, iconSize = 12;
+        int x = this.width - listW - 5, y0 = 10, height = Math.min(BLOCK_LINES, total) * (iconSize + 4);
+        ctx.fill(x - 5, y0 - 4, x + listW + 8, y0 + height + 4, 0x40FFFFFF);
         int maxScroll = Math.max(0, total - BLOCK_LINES);
-        float fontSize = 0.75f;
-
-        MinecraftClient mc = MinecraftClient.getInstance();
-        ItemRenderer ir = mc.getItemRenderer();
-        VertexConsumerProvider.Immediate vcp = mc.getBufferBuilders().getEntityVertexConsumers();
-
-        GlStateManager._enableDepthTest();
-        GlStateManager._enablePolygonOffset();
-        GlStateManager._polygonOffset(-2f, -2f);
-
-        final int FULL_BRIGHT = LightmapTextureManager.pack(15, 15);
-        MatrixStack matrices = new MatrixStack();
-
+        var fontSize = 0.75;
         for (int i = 0; i < BLOCK_LINES && (i + blockScroll) < total; i++) {
             var entry = blockList.get(i + blockScroll);
             if (entry.stack.equals(new ItemStack(Items.BARRIER))) continue;
-            int y = y0 + i * (iconSize + 2);
-
-            matrices.push();
-            matrices.translate(x + 8.0f, y + 8.0f, 0f);
-            matrices.scale(iconSize, iconSize, 16);
-            matrices.scale(1f, -1f, 1f);
-
-            ir.renderItem(
-                    entry.stack,
-                    ItemDisplayContext.GUI,
-                    FULL_BRIGHT,
-                    OverlayTexture.DEFAULT_UV,
-                    matrices, vcp, mc.world, 0
-            );
-            matrices.pop();
-
-            matrices.push();
-            matrices.translate(x + iconSize + 6, y + 2, 0);
-            matrices.scale(fontSize, fontSize, 1.0f);
-            ctx.drawText(this.textRenderer, entry.displayName, 0, 0, 0xEBEBEB, false);
-            matrices.pop();
-
-            matrices.push();
-            matrices.translate(x + listW - 45, y + 2, 0);
-            matrices.scale(fontSize, fontSize, 1.0f);
-            ctx.drawText(this.textRenderer, entry.countBoxGroup(), 0, 0, 0xFF512C, false);
-            matrices.pop();
+            int y = y0 + i * (iconSize + 4);
+            ctx.drawItem(entry.stack,x, y);
+            ctx.drawText(this.textRenderer, entry.displayName, x + iconSize + 10, y + 4, 0xFFEBEBEB, true);
+            ctx.drawText(this.textRenderer, entry.countBoxGroup(), x + listW - 35, y + 7, 0xFFFF512C, true);
         }
 
-        vcp.draw();
-
-        GlStateManager._disablePolygonOffset();
-
         if (maxScroll > 0) {
-            int barX = x + listW - 6, barY = y0, barW = 4, barH = height;
-            ctx.fill(barX, barY, barX + barW, barY + barH, 0x22000000);
-            int sliderH = Math.max(12, barH * BLOCK_LINES / total);
-            int sliderY = barY + (barH - sliderH) * blockScroll / maxScroll;
+            int barX = x + listW - 6, barW = 4;
+            ctx.fill(barX, y0, barX + barW, y0 + height, 0x22000000);
+            int sliderH = Math.max(12, height * BLOCK_LINES / total);
+            int sliderY = y0 + (height - sliderH) * blockScroll / maxScroll;
             ctx.fill(barX + 1, sliderY, barX + barW - 1, sliderY + sliderH, 0xFFAAAAAA);
         }
     }
@@ -235,8 +196,8 @@ public class TutorialGroupScreen extends Screen {
                 btn -> autoRotate = !autoRotate).dimensions(320, this.height - 30, 20, 20).build());
         this.addDrawableChild(ButtonWidget.builder(Text.literal("↺"),
                 btn -> resetKey()).dimensions(340, this.height - 30, 20, 20).build());
-        NarratedMultilineTextWidget descWidget = new NarratedMultilineTextWidget(180, Text.translatable("tutorial." + machine.id + ".step" + currentStep), this.textRenderer);
-        descWidget.setPosition(180, 170);
+        NarratedMultilineTextWidget descWidget = new NarratedMultilineTextWidget(120, Text.translatable("tutorial." + machine.id + ".step" + currentStep), this.textRenderer);
+        descWidget.setPosition(5, 165);
         this.addDrawableChild(descWidget);
         this.addDrawableChild(ButtonWidget.builder(Text.literal("EMI"),
                 btn -> Openpage()).dimensions(360, this.height - 30, 40, 20).build());
