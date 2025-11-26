@@ -3,17 +3,35 @@ package com.automationera.ui;
 import com.automationera.OutputRecipe;
 import com.automationera.basic.ExportFile;
 
+import com.automationera.mixin.BlockDisplayAccessor;
 import com.mojang.blaze3d.opengl.GlStateManager;
+import com.mojang.blaze3d.systems.RenderSystem;
+import net.minecraft.block.Blocks;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.widget.ButtonWidget;
 import net.minecraft.client.gui.widget.NarratedMultilineTextWidget;
 import net.minecraft.client.gui.widget.TextWidget;
-import net.minecraft.client.render.LightmapTextureManager;
-import net.minecraft.client.render.OverlayTexture;
-import net.minecraft.client.render.VertexConsumerProvider;
+import net.minecraft.client.network.AbstractClientPlayerEntity;
+import net.minecraft.client.render.*;
+import net.minecraft.client.render.entity.EntityRenderer;
+import net.minecraft.client.render.entity.EntityRenderers;
+import net.minecraft.client.render.entity.model.EntityModelLayer;
+import net.minecraft.client.render.entity.model.EntityModelLayers;
+import net.minecraft.client.render.entity.model.PlayerEntityModel;
+import net.minecraft.client.render.entity.state.BlockDisplayEntityRenderState;
+import net.minecraft.client.render.entity.state.PlayerEntityRenderState;
 import net.minecraft.client.render.item.ItemRenderer;
+import net.minecraft.client.render.model.BakedQuad;
+import net.minecraft.client.render.model.BlockModelPart;
+import net.minecraft.client.render.model.BlockStateModel;
+import net.minecraft.client.util.BufferAllocator;
 import net.minecraft.client.util.math.MatrixStack;
+import net.minecraft.entity.Entity;
+import net.minecraft.entity.EntityType;
+import net.minecraft.entity.FallingBlockEntity;
+import net.minecraft.entity.decoration.DisplayEntity;
+import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemDisplayContext;
 import net.minecraft.item.ItemStack;
@@ -21,6 +39,12 @@ import net.minecraft.item.Items;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.text.Text;
 import net.minecraft.client.gui.DrawContext;
+import net.minecraft.util.Identifier;
+import net.minecraft.util.math.Direction;
+import net.minecraft.util.math.random.LocalRandom;
+import org.joml.Matrix4f;
+import org.joml.Quaternionf;
+import org.joml.Vector3f;
 import org.slf4j.LoggerFactory;
 import java.util.List;
 import java.util.Map;
@@ -37,6 +61,7 @@ public class TutorialGroupScreen extends Screen {
     private IsometricRenderState renderState;
     private NbtCompound blockListNbtCache;
     private List<MachineInfo> choose = List.of();
+    private final MinecraftClient mc = MinecraftClient.getInstance();
 
     private final List<AnalysisList.Entry> blockListExternal;
     private List<AnalysisList.Entry> blockList;
@@ -137,19 +162,68 @@ public class TutorialGroupScreen extends Screen {
         if (machine != null) {
             NbtCompound structureNbt = TutorialManager.loadNbtFromResource(machine.id, currentStep);
             TutorialManager.renderStructure3D(ctx, structureNbt, currentStep, renderState, width, height, width, machine.selectbox);
+//            matrices.push();
+//            matrices.translate(this.width / 2.0, this.height / 2.0, 0);
+//            float scale = 80.0f;
+//            matrices.scale(scale, scale, scale);
+//            renderQuad();
             if (blockListExternal != null) {
                 blockList = blockListExternal; //execute
             } else if (structureNbt != null && (blockList == null || !structureNbt.equals(blockListNbtCache))) {
                 blockList = new AnalysisList(structureNbt).getResult(); //null
                 blockListNbtCache = structureNbt == null ? null : structureNbt.copy();
             }
-            renderBlockList(ctx);
+            renderBlockList(ctx, delta);
         }
         if (autoRotate) renderState.addRotation(rotateSpeed);
         renderUI();
     }
 
-    private void renderBlockList(DrawContext ctx) {
+
+
+    /*@Override
+    public void close() {
+        allocator.close(); // 关屏幕时再关闭
+        super.close();
+    }
+
+    private static final BufferAllocator allocator = new BufferAllocator(RenderLayer.DEFAULT_BUFFER_SIZE);
+    private static final MatrixStack matrices = new MatrixStack();
+    public static void renderQuad(){
+        VertexConsumerProvider.Immediate immediate = VertexConsumerProvider.immediate(allocator);
+        VertexConsumer builder = immediate.getBuffer(RenderLayer.getSolid());
+        MatrixStack.Entry matrixEntry = matrices.peek();
+        LOGGER.info("Immediate={}, builder={}, matrixEntry={}", immediate, builder, matrixEntry);
+        int l = LightmapTextureManager.pack(15, 15);
+        int[] light = new int[] { l, l, l, l };
+        float[] brightness = new float[] { 0.75f, 0.75f, 0.75f, 1.0f };
+        BlockStateModel model = mc.getBakedModelManager().getBlockModels().getModel(Blocks.BRICKS.getDefaultState());
+        var RAND = new LocalRandom(0);
+        List<BlockModelPart> parts = model.getParts(RAND);
+        for (BlockModelPart part : parts)
+        {
+            for (Direction face : Direction.values())
+            {
+                RAND.setSeed(0);
+                for (BakedQuad quad : part.getQuads(face))
+                {
+                    builder.quad(matrixEntry, quad, brightness, 1.0f, 1.0f, 1.0f, 1.0f, light, OverlayTexture.DEFAULT_UV, true);
+                }
+            }
+
+            RAND.setSeed(0);
+            for (BakedQuad quad : part.getQuads(null))
+            {
+                builder.quad(matrixEntry, quad, brightness, 1.0f, 1.0f, 1.0f, 1.0f, light, OverlayTexture.DEFAULT_UV, true);
+            }
+        }
+
+        immediate.draw();
+    }
+
+     */
+
+    private void renderBlockList(DrawContext ctx, float delta) {
         if (blockList == null || blockList.isEmpty()) {
             LOGGER.warn("Blocklist null");
             return;
@@ -168,8 +242,79 @@ public class TutorialGroupScreen extends Screen {
             ctx.drawItem(entry.stack,x, y);
             ctx.drawText(this.textRenderer, entry.displayName, x + iconSize + 10, y + 4, 0xFFEBEBEB, true);
             ctx.drawText(this.textRenderer, entry.countBoxGroup(), x + listW - 35, y + 7, 0xFFFF512C, true);
-
         }
+
+        /*PlayerEntityModel playerModel = new PlayerEntityModel(
+                mc.getLoadedEntityModels().getModelPart(EntityModelLayers.PLAYER),
+                false
+        );
+
+        // 2. 拿皮肤 Identifier
+        Identifier skin = mc.player.getSkinTextures().texture(); // 或 getSkinTexture()
+
+        // 4. 调用 addPlayerSkin
+        ctx.addPlayerSkin(
+                playerModel,
+                skin,
+                20.0f,  // scale
+                45.0f,   // xRotation
+                45f,   // yRotation
+                0f,   // yPivot
+                100, 100, 200, 200
+        );
+        ctx.addPlayerSkin(
+                playerModel,
+                skin,
+                20.0f,  // scale
+                0f,   // xRotation
+                45.0f,   // yRotation
+                45f,   // yPivot
+                200, 100, 300, 200
+        );
+        ctx.addPlayerSkin(
+                playerModel,
+                skin,
+                20.0f,  // scale
+                45f,   // xRotation
+                0f,   // yRotation
+                45f,   // yPivot
+                300, 100, 400, 200
+        );*/
+
+
+
+        /*DisplayEntity.BlockDisplayEntity entity = new DisplayEntity.BlockDisplayEntity(
+                EntityType.BLOCK_DISPLAY,mc.world
+        );
+        entity.setBlockState(Blocks.BRICKS.getDefaultState());
+        ((BlockDisplayAccessor) entity).invokeRefreshData(false, 0f);
+        FallingBlockEntity fe = new FallingBlockEntity(mc.world,0,0,0,Blocks.BRICKS.getDefaultState());
+        @SuppressWarnings("unchecked")
+        EntityRenderer<DisplayEntity.BlockDisplayEntity, BlockDisplayEntityRenderState> renderer = (EntityRenderer<DisplayEntity.BlockDisplayEntity, BlockDisplayEntityRenderState>)
+                mc.getEntityRenderDispatcher().getRenderer(entity);
+        BlockDisplayEntityRenderState state = renderer.getAndUpdateRenderState(entity, 10f);
+        LOGGER.info("world = {}", mc.world);
+        LOGGER.info("entity = {}", entity);
+        LOGGER.info("renderer = {}", renderer);
+        LOGGER.info("state = {}", state);
+        if (state instanceof BlockDisplayEntityRenderState blockState) {
+            LOGGER.info("state.data = {}", blockState.data);
+        }
+
+
+        ctx.addEntity(
+                state,
+                100f,
+                new Vector3f(0f, 0f, 0f),
+                new Quaternionf()
+                        .rotateXYZ(
+                                (float) Math.toRadians(0),
+                                (float) Math.toRadians(0),
+                                (float) Math.toRadians(0)
+                        ),
+                new Quaternionf(),
+                100, 100,300,300
+        );*/
 
         if (maxScroll > 0) {
             int barX = x + listW, barY = y0, barW = 4, barH = height;

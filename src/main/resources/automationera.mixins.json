@@ -3,7 +3,8 @@
 	"package": "com.automationera.mixin",
 	"compatibilityLevel": "JAVA_21",
 	"mixins": [
-		"ExampleMixin"
+		"ExampleMixin",
+		"BlockDisplayAccessor"
 	],
 	"injectors": {
 		"defaultRequire": 1

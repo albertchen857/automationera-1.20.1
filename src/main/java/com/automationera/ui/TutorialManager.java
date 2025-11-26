@@ -1,17 +1,24 @@
 package com.automationera.ui;
 
 import com.mojang.blaze3d.opengl.GlStateManager;
+import com.mojang.blaze3d.pipeline.RenderPipeline;
 import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.blaze3d.vertex.VertexFormat;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockRenderType;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
 import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.gl.RenderPipelines;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.render.*;
 import net.minecraft.client.render.block.BlockRenderManager;
 
+import net.minecraft.client.render.model.BakedQuad;
+import net.minecraft.client.render.model.BlockModelPart;
+import net.minecraft.client.render.model.BlockStateModel;
 import net.minecraft.client.texture.Sprite;
+import net.minecraft.client.util.BufferAllocator;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.nbt.*;
 import net.minecraft.registry.Registries;
@@ -19,11 +26,17 @@ import net.minecraft.resource.Resource;
 import net.minecraft.resource.ResourceManager;
 import net.minecraft.state.property.Property;
 import net.minecraft.util.Identifier;
+import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.Direction;
+import net.minecraft.util.math.random.BaseRandom;
+import net.minecraft.util.math.random.LocalRandom;
+import net.minecraft.world.BlockRenderView;
 import org.joml.Matrix4f;
 import org.joml.Quaternionf;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.awt.image.renderable.RenderContext;
 import java.io.InputStream;
 import java.time.Instant;
 import java.util.*;
@@ -33,7 +46,9 @@ import java.util.concurrent.atomic.AtomicReference;
 public class TutorialManager {
     private static long nowtime;
     private static long lasttime=0;
-    private static boolean rt = true;
+    private static final boolean rt = true;
+    private static final MatrixStack matrices = new MatrixStack();
+    private static final MinecraftClient mc = MinecraftClient.getInstance();
     public static class SLogger {
         private final Logger logger;
 
@@ -64,7 +79,7 @@ public class TutorialManager {
 
 
     public static NbtCompound loadNbtFromResource(String group, int step) {
-        ResourceManager rm = MinecraftClient.getInstance().getResourceManager();
+        ResourceManager rm = mc.getResourceManager();
         Identifier id = Identifier.of("automationera","tutorial/"+group+"/"+group+"_step"+step+".nbt");
         Resource res = rm.getResource(id).orElse(null);
         if (res == null) return null;
@@ -81,11 +96,13 @@ public class TutorialManager {
             LOGGER.warn("renderStructure3D: NBT invalid");
             return;
         }
-        MinecraftClient mc = MinecraftClient.getInstance();
         BlockRenderManager brm = mc.getBlockRenderManager();
-        VertexConsumerProvider.Immediate immediate = mc.getBufferBuilders().getEntityVertexConsumers();
-        var matrices = new MatrixStack();
-        /*List<BlockState> palette = new ArrayList<>();
+        //VertexConsumerProvider.Immediate immediate = mc.getBufferBuilders().getEntityVertexConsumers();
+        BufferAllocator allocator = new BufferAllocator(RenderLayer.DEFAULT_BUFFER_SIZE);
+        VertexConsumerProvider.Immediate immediate = VertexConsumerProvider.immediate(allocator);
+        VertexConsumer vertexConsumer = immediate.getBuffer(RenderLayer.getGlintTranslucent());
+
+        List<BlockState> palette = new ArrayList<>();
         Optional<NbtList> optn = nbt.getList("palette");
         optn.ifPresent(nbtElements -> {
             for (int i = 0; i < optn.get().size(); i++)
@@ -112,7 +129,7 @@ public class TutorialManager {
         double globalScale = state.scale * size / Math.max(1, Math.max(maxX-minX+1, Math.max(maxY-minY+1, maxZ-minZ+1))) / 1.2f;
 
         matrices.push();
-        matrices.translate(width / 3f * 2f - 30, height / 8f * 5f + state.yc - 40, 200);//position
+        matrices.translate(width / 3f * 2f - 30, height / 8f * 5f + state.yc - 40, 50);//position
 
         double nx = (Math.sin(Math.toRadians(state.rotation)) * Math.cos(Math.toRadians(state.pitch))),
                 ny = (-Math.sin(Math.toRadians(state.pitch))),
@@ -121,15 +138,11 @@ public class TutorialManager {
         matrices.multiply(new Quaternionf().rotateY((float) Math.atan2(nx, nz)));//Normal Rotation
 
         matrices.scale((float)globalScale, (float)-globalScale, (float)globalScale);
-        matrices.translate(-dx, -dy, -dz);*///center point
+        matrices.translate(-dx, -dy, -dz);//center point
 
-        /*GlStateManager._enableDepthTest();
-        GlStateManager._depthMask(true);
-        GlStateManager._enableCull();
-        GlStateManager._enableBlend();
 
-         */
-        /*for (int i = 0; i < blocks.size(); i++) {
+
+        for (int i = 0; i < blocks.size(); i++) {
             NbtCompound blk = blocks.getCompoundOrEmpty(i);
             NbtList pos = blk.getList("pos").orElse(new NbtList());
             int x = pos.getInt(0).orElse(0), y = pos.getInt(1).orElse(0), z = pos.getInt(2).orElse(0);
@@ -142,12 +155,10 @@ public class TutorialManager {
                 matrices.translate(x, y, z);
                 Block block = bs.getBlock();
 
-                if (!bs.isAir() || bs.getRenderType() == BlockRenderType.MODEL) {
-                    //LOGGER.info("{},{},{},{}|{}",block,x,y,z,bs);
-                    brm.renderBlockAsEntity(bs, matrices, immediate, 15728880, OverlayTexture.DEFAULT_UV);
+                if (!bs.isAir() && bs.getRenderType() == BlockRenderType.MODEL) {
+                    brm.renderBlockAsEntity(bs, matrices, immediate, 0xF000F0, OverlayTexture.DEFAULT_UV);
                 }
                 if (!bs.getFluidState().isEmpty()) {
-                    GlStateManager._depthMask(false);
                     boolean isWaterlogged = false;
                     int level = 0;
                     Identifier tex = block == Blocks.LAVA
@@ -170,7 +181,7 @@ public class TutorialManager {
                     int r = isWater ? 63 : 255;
                     int g = isWater ? 118 : 255;
                     int b = isWater ? 228 : 255;
-                    if (isWater || block == Blocks.LAVA) {
+                    if (isWater && block == Blocks.LAVA) {
                         renderFluidCube(matrices, immediate, tex, 0, fluidHeight-0.001f, 0.9f, r, g, b);
                     }
                 }
@@ -178,27 +189,58 @@ public class TutorialManager {
             }
         }
 
-         */
-        brm.renderBlockAsEntity(Blocks.BRICKS.getDefaultState(), matrices, immediate, 0xFFF000F0, OverlayTexture.DEFAULT_UV);
-        immediate.draw();
 
         matrices.push();
+        brm.renderBlockAsEntity(Blocks.BRICKS.getDefaultState(), matrices, immediate, 0xF000F0, OverlayTexture.DEFAULT_UV);
+        matrices.pop();
+
+
         if (SelectBox != null && step-1 < SelectBox.size()) {
             long time = System.currentTimeMillis();
             float a = 0.5f + 0.3f * (float)Math.abs(Math.sin(time / 300.0));
+            matrices.push();
             for (TutorialGroupScreen.SelectionBox box : SelectBox.get(step-1)) {
                 renderSelectionBoxOutline(matrices, immediate, box, 2.0f, 1f, 1f, 0.0f, a); // 粗亮黄
             }
+            matrices.pop();
         }
         immediate.draw();
-        /*
-        GlStateManager._depthMask(true);
-        GlStateManager._disableDepthTest();
-        GlStateManager._disableCull();
-        GlStateManager._disableBlend();
-
-         */
+        allocator.close();
         matrices.pop();
+
+    }
+
+
+    public static void renderQuad(BufferAllocator allocator, MatrixStack matrices){
+        VertexConsumerProvider.Immediate immediate = VertexConsumerProvider.immediate(allocator);
+        VertexConsumer builder = immediate.getBuffer(RenderLayer.getGlintTranslucent());
+        MatrixStack.Entry matrixEntry = matrices.peek();
+        int l = LightmapTextureManager.pack(15, 15);
+        int[] light = new int[] { l, l, l, l };
+        float[] brightness = new float[] { 0.75f, 0.75f, 0.75f, 1.0f };
+        BlockStateModel model = mc.getBakedModelManager().getBlockModels().getModel(Blocks.BRICKS.getDefaultState());
+        var RAND = new LocalRandom(0);
+        List<BlockModelPart> parts = model.getParts(RAND);
+        for (BlockModelPart part : parts)
+        {
+            for (Direction face : Direction.values())
+            {
+                RAND.setSeed(0);
+                for (BakedQuad quad : part.getQuads(face))
+                {
+                    builder.quad(matrixEntry, quad, brightness, 1.0f, 1.0f, 1.0f, 1.0f, light, OverlayTexture.DEFAULT_UV, true);
+                }
+            }
+
+            RAND.setSeed(0);
+            for (BakedQuad quad : part.getQuads(null))
+            {
+                builder.quad(matrixEntry, quad, brightness, 1.0f, 1.0f, 1.0f, 1.0f, light, OverlayTexture.DEFAULT_UV, true);
+            }
+        }
+
+        immediate.draw();
+        allocator.close();
     }
 
 
@@ -214,17 +256,14 @@ public class TutorialManager {
         float v0 = sprite.getMinV();
         float v1 = sprite.getMaxV();
 
-        GlStateManager._enableBlend();
-        GlStateManager._disableCull();
-
         Matrix4f mat = matrices.peek().getPositionMatrix();
         VertexConsumer builder = consumers.getBuffer(RenderLayer.getGlintTranslucent());
-
         int a = Math.round(255 * alpha);
         int light = 0xFFF000F0;
         int overlay = OverlayTexture.DEFAULT_UV;
 
         // 上面
+        builder.quad(matrices.peek(),null,new float[]{light},r,g,b,a, new int[]{light},overlay,true);
         builder.vertex(mat, 0, y2, 1).texture(u0, v1).color(r, g, b, a).light(light).normal(0, 1, 0).overlay(overlay);
         builder.vertex(mat, 1, y2, 1).texture(u1, v1).color(r, g, b, a).light(light).normal(0, 1, 0).overlay(overlay);
         builder.vertex(mat, 1, y2, 0).texture(u1, v0).color(r, g, b, a).light(light).normal(0, 1, 0).overlay(overlay);
