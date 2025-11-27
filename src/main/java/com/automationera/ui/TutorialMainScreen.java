@@ -49,6 +49,10 @@ public class TutorialMainScreen extends Screen {
                 btn -> {
                     ExportFile.openAutomationEraDir();
                 }).dimensions(startX, this.height-40, buttonWidth, 20).build());
+        this.addDrawableChild(ButtonWidget.builder(Text.literal("Buy Me A Coffee"),
+                btn -> {
+                    ExportFile.buymeacoffee();
+                }).dimensions(startX, this.height-70, buttonWidth, 20).build());
         this.addDrawableChild(new NarratedMultilineTextWidget(200, Text.translatable("tutorial.ui.note1"), this.textRenderer)).setPosition(this.width-220, this.height-150);
 
     }

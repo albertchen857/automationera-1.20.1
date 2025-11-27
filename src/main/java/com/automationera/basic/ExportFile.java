@@ -11,6 +11,7 @@ import org.slf4j.LoggerFactory;
 import java.awt.*;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
@@ -76,5 +77,30 @@ public class ExportFile {
                 e.printStackTrace();
             }
         });
+    }
+
+    public static void buymeacoffee(){
+        String url = "https://buymeacoffee.com/albertchen857";
+        try {
+            URI uri = new URI(url);
+
+            if (Desktop.isDesktopSupported()) {
+                Desktop.getDesktop().browse(uri);
+                return;
+            }
+
+            String os = System.getProperty("os.name").toLowerCase(Locale.ROOT);
+
+            Runtime rt = Runtime.getRuntime();
+            if (os.contains("win")) {
+                rt.exec("rundll32 url.dll,FileProtocolHandler " + url);
+            } else if (os.contains("mac")) {
+                rt.exec("open " + url);
+            } else {
+                rt.exec("xdg-open " + url);  // Linux
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 }
