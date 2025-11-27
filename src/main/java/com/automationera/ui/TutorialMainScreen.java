@@ -10,6 +10,9 @@ import net.minecraft.item.Items;
 import net.minecraft.text.Text;
 import org.slf4j.LoggerFactory;
 
+import java.awt.*;
+import java.net.URI;
+
 public class TutorialMainScreen extends Screen {
     public static final org.slf4j.Logger LOGGER = LoggerFactory.getLogger("AutomationEraTutorial");
     public TutorialMainScreen() {
@@ -61,9 +64,12 @@ public class TutorialMainScreen extends Screen {
         ));
         this.addDrawableChild(ButtonWidget.builder(Text.translatable("tutorial.ui.schem"),
                 btn -> {
-                    LOGGER.info("open lol");
                     ExportFile.openAutomationEraDir();
                 }).dimensions(startX, this.height-40, buttonWidth, 20).build());
+        this.addDrawableChild(ButtonWidget.builder(Text.literal("Buy Me A Coffee"),
+                btn -> {
+                    ExportFile.buymeacoffee();
+                }).dimensions(startX, this.height-70, buttonWidth, 20).build());
         this.addDrawableChild(new NarratedMultilineTextWidget(200, Text.translatable("tutorial.ui.note1"), this.textRenderer)).setPosition(this.width-220, this.height-150);
     }
 
