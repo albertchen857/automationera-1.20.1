@@ -126,7 +126,7 @@ public class TutorialGroupScreen extends Screen {
                                 this.client.setScreen(new TutorialMainScreen());
                             }
                         })
-                .dimensions(20, this.height - 30, 60, 20).build());
+                .dimensions(20, this.height - 25, 60, 20).build());
         machine = choose.isEmpty() ? new MachineInfo("NULL",Items.AIR,Text.literal("null"),List.of(),true) : choose.get(Math.min(selectedMac, choose.size() - 1));
         TextWidget titleWidget = new TextWidget(0, 5, 200, 20, this.title.copy().append(Text.literal("-")).append(machine.name), this.textRenderer);
         this.addDrawableChild(titleWidget);

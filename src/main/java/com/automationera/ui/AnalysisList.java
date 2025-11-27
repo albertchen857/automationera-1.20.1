@@ -2,15 +2,25 @@ package com.automationera.ui;
 
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
+import net.minecraft.item.Items;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.nbt.NbtList;
 import net.minecraft.registry.Registries;
 import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
 
 public class AnalysisList {
+    private static List<@NotNull Item> NonInclude = List.of(
+            Items.AIR,
+            Items.BARRIER,
+            Items.YELLOW_CONCRETE,
+            Items.BLACK_CONCRETE,
+            Items.BLUE_STAINED_GLASS,
+            Items.LIME_STAINED_GLASS
+    );
     public static class Entry {
         public final ItemStack stack;
         public final Text displayName;
@@ -33,9 +43,9 @@ public class AnalysisList {
 
     // 对比底层原文
     public AnalysisList(NbtCompound currentNbt, NbtCompound baseNbt, boolean consist) {
-        Map<Item, Integer> now = statItem(currentNbt);
+        Map<Item, Integer> now = statItem(currentNbt, true);
         if (consist && baseNbt != null) {
-            Map<Item, Integer> prev = statItem(baseNbt);
+            Map<Item, Integer> prev = statItem(baseNbt, true);
             var it = now.entrySet().iterator();
             while (it.hasNext()){
                 var e=it.next();
@@ -52,10 +62,10 @@ public class AnalysisList {
     }
 
     public AnalysisList(NbtCompound nbt) {
-        this.result = toEntryList(statItem(nbt));
+        this.result = toEntryList(statItem(nbt, true));
     }
 
-    private Map<Item, Integer> statItem(NbtCompound nbt) {
+    private Map<Item, Integer> statItem(NbtCompound nbt, boolean include) {
         Map<Item, Integer> map = new HashMap<>();
         if (nbt == null || !nbt.contains("palette") || !nbt.contains("blocks")) return map;
         Optional<NbtList> palette = nbt.getList("palette");
@@ -68,7 +78,7 @@ public class AnalysisList {
                 String blockId = palette.get().getCompoundOrEmpty(id).getString("Name").orElse("");
                 var block = Registries.BLOCK.get(Identifier.of(blockId));
                 var item = block.asItem();
-                if (item != null && !item.equals(net.minecraft.item.Items.AIR)) {
+                if (!(item == null || item.equals(Items.AIR) || (NonInclude.contains(item)) && include)) {
                     map.put(item, map.getOrDefault(item, 0) + 1);
                 }
             }
