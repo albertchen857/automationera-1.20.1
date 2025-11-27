@@ -700,7 +700,7 @@
   "tutorial.ui.main": "教程主界面",
   "tutorial.ui.output": "投影导出",
   "tutorial.ui.schem": "打开投影目录",
-  "tutorial.ui.note1": "机器教程\n左边是机器列表,右边是材料列表(DIFF减法/NORM普通模式)。\n中间是3D逐步图例:左右拖-旋转、上下拖-上下位移、滚轮-缩放。\n下面是按钮:xxP按钮-控制图例俯视角、\u25B6-自动旋转、\u21BA-重置、EMI跳转EMI机器介绍",
+  "tutorial.ui.note1": "机器教程\n左边是机器列表,右边是材料列表(DIFF减法/NORM普通模式)。\n中间是3D逐步图例:左右拖-旋转、上下拖-上下位移、滚轮-缩放,被框选的部位则是此步骤新增部分。\n下面是按钮:xxP按钮-控制图例俯视角、\u25B6-自动旋转、\u21BA-重置、EMI跳转EMI机器介绍\n图中黄黑混泥土方块表标记长度、蓝色玻璃表海平面64高度\n材料列表单位格式是 总数/组数S个数",
   "tutorial.group.factory": "工厂",
   "tutorial.group.farm": "自动农场",
   "tutorial.group.special": "特殊机器",
