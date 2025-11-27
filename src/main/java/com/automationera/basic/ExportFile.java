@@ -6,16 +6,20 @@ import net.minecraft.client.MinecraftClient;
 import net.minecraft.resource.Resource;
 import net.minecraft.resource.ResourceManager;
 import net.minecraft.util.Identifier;
+import org.slf4j.LoggerFactory;
 
+import java.awt.*;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.Collection;
+import java.util.Locale;
 import java.util.Map;
 
 public class ExportFile {
+    private static final org.slf4j.Logger LOGGER = LoggerFactory.getLogger("AutomationEraTutorial/FileManager");
     public static Path ensureAutomationEraDir() throws IOException {
         Path gameDir = FabricLoader.getInstance().getGameDir();
         String ver = SharedConstants.getGameVersion().getName();
@@ -43,5 +47,34 @@ public class ExportFile {
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+    public static void openAutomationEraDir() {
+        MinecraftClient.getInstance().execute(() -> {
+            try {
+                Path dir = ensureAutomationEraDir();
+                if (Desktop.isDesktopSupported()) {
+                    Desktop.getDesktop().open(dir.toFile());
+                    LOGGER.info("Java desktop running");
+                }else {
+                    LOGGER.warn("Java Desktop error");
+                    String os = System.getProperty("os.name").toLowerCase(Locale.ROOT);
+
+                    ProcessBuilder pb;
+                    if (os.contains("win")) {
+                        // Windows
+                        pb = new ProcessBuilder("explorer.exe", dir.toString());
+                    } else if (os.contains("mac")) {
+                        // macOS
+                        pb = new ProcessBuilder("open", dir.toString());
+                    } else {
+                        // Linux
+                        pb = new ProcessBuilder("xdg-open", dir.toString());
+                    }
+                    pb.start();
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        });
     }
 }

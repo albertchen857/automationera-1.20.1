@@ -35,18 +35,20 @@ public class AnalysisList {
     public AnalysisList(NbtCompound currentNbt, NbtCompound baseNbt, boolean consist) {
         Map<Item, Integer> now = statItem(currentNbt);
         if (consist && baseNbt != null) {
-            Map<Item, Integer> base = statItem(baseNbt);
-            Map<Item, Integer> diff = new HashMap<>();
-            for (var e : now.entrySet()) {
+            Map<Item, Integer> prev = statItem(baseNbt);
+            var it = now.entrySet().iterator();
+            while (it.hasNext()){
+                var e=it.next();
                 Item item = e.getKey();
-                int before = base.getOrDefault(item, 0);
-                int after = e.getValue();
-                if (after > before) diff.put(item, after - before);
+                int num = e.getValue()- prev.getOrDefault(item,0);
+                if (num>0){
+                    e.setValue(num);
+                }else{
+                    it.remove();
+                }
             }
-            this.result = toEntryList(diff);
-        } else {
-            this.result = toEntryList(now);
         }
+        this.result = toEntryList(now);
     }
 
     public AnalysisList(NbtCompound nbt) {

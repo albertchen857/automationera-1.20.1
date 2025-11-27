@@ -738,6 +738,8 @@
   "tutorial.ui.close": "Close",
   "tutorial.ui.main": "Tutorial Main Page",
   "tutorial.ui.output": "NBT Output",
+  "tutorial.ui.schem": "Open Litematica Folder",
+  "tutorial.ui.note1": "Tutorial Notice\nLeft side is Machine List. Right side is Block Material List(DIFF/NORM 2 mode)。3D step in middle:L/R Drag-control rotate、U/D Drag-control displacement、Scrolling control scaling. Buttons in the bottom:xxP control pitch、\u25B6-auto rotation、\u21BAReset、EMI linked to it's EMI page descriptions",
   "tutorial.group.factory": "Factory",
   "tutorial.group.farm": "Automatic Farm",
   "tutorial.group.special": "Special Machine",
