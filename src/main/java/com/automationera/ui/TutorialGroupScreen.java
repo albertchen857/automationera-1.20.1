@@ -35,7 +35,7 @@ public class TutorialGroupScreen extends Screen {
     private boolean autoRotate = false;
     private MachineInfo machine;
     private MachineEntryList list;
-    public static final org.slf4j.Logger LOGGER = LoggerFactory.getLogger("AutomationEraTutorial");
+    private static final org.slf4j.Logger LOGGER = LoggerFactory.getLogger("AutomationEraTutorial");
 
     private NbtCompound structureNbt;
     private IsometricRenderState renderState;
@@ -46,17 +46,19 @@ public class TutorialGroupScreen extends Screen {
     private NbtCompound blockListNbtCache = null;
     private int blockScroll = 0;
     private static final int BLOCK_LINES = 8;
+    private boolean blocklistConsist;
 
-    public TutorialGroupScreen(String group, int selectedMac, int currentStep, IsometricRenderState renderState, List<AnalysisList.Entry> blockListExternal) {
+    public TutorialGroupScreen(String group, int selectedMac, int currentStep, IsometricRenderState renderState, List<AnalysisList.Entry> blockListExternal, boolean blocklistConsist) {
         super(Text.translatable("tutorial.group." + group));
         this.group = group;
         this.selectedMac = selectedMac;
         this.currentStep = currentStep;
         this.renderState = renderState;
         this.blockListExternal = blockListExternal;
+        this.blocklistConsist = blocklistConsist;
     }
     public TutorialGroupScreen(String group, int selectedMac, int currentStep, IsometricRenderState renderState) {
-        this(group, selectedMac, currentStep, renderState, null);
+        this(group, selectedMac, currentStep, renderState, null, false);
     }
 
     @Override
@@ -114,14 +116,14 @@ public class TutorialGroupScreen extends Screen {
             int idx = m;
             MachineInfo info = choose.get(m);
             list.addEntry(idx, new ItemStack(info.icon), info.name, () -> {
-                this.client.setScreen(new TutorialGroupScreen(group, idx, 1, renderState, blockListExternal));
+                this.client.setScreen(new TutorialGroupScreen(group, idx, 1, renderState, blockListExternal, blocklistConsist));
             });
         }
         list.selectByIndex(selectedMac);
         this.addDrawableChild(list);
         this.addDrawableChild(ButtonWidget.builder(Text.translatable("tutorial.ui.close"),
                         btn -> this.client.setScreen(new TutorialMainScreen()))
-                .dimensions(20, this.height - 30, 60, 20).build());
+                .dimensions(20, this.height - 25, 60, 20).build());
         machine = choose.isEmpty() ? new MachineInfo("NULL",Items.AIR,Text.literal("null"),List.of(),true) : choose.get(Math.min(selectedMac, choose.size() - 1));
         TextWidget titleWidget = new TextWidget(0, 5, 200, 20, this.title.copy().append(Text.literal("-")).append(machine.name), this.textRenderer);
         this.addDrawableChild(titleWidget);
@@ -137,7 +139,12 @@ public class TutorialGroupScreen extends Screen {
             if (blockListExternal != null) { //???
                 blockList = blockListExternal;
             } else if (blockList == null || !structureNbt.equals(blockListNbtCache)) {
-                blockList = new AnalysisList(structureNbt).getResult();
+                if (blocklistConsist && currentStep>0){
+                    NbtCompound prevnbt = TutorialManager.loadNbtFromResource(machine.id, currentStep-1);
+                    blockList = new AnalysisList(structureNbt, prevnbt, machine.consist).getResult();
+                }else{
+                    blockList = new AnalysisList(structureNbt).getResult();
+                }
                 blockListNbtCache = structureNbt == null ? null : structureNbt.copy();
             }
             renderBlockList(ctx);
@@ -148,7 +155,6 @@ public class TutorialGroupScreen extends Screen {
 
     private void renderBlockList(DrawContext ctx) {
         if (blockList == null || blockList.isEmpty()) return;
-
         int total = blockList.size();
         int listW = 100, iconSize = 12;
         int x = this.width - listW - 5, y0 = 10, height = Math.min(BLOCK_LINES, total) * (iconSize + 4);
@@ -175,26 +181,31 @@ public class TutorialGroupScreen extends Screen {
 
     public void renderUI() {
         this.addDrawableChild(ButtonWidget.builder(Text.translatable("tutorial.ui.prev"),
-                btn -> lastStep()).dimensions(120, this.height - 30, 40, 20).build());
+                btn -> lastStep()).dimensions(120, this.height - 25, 40, 20).build());
         this.addDrawableChild(ButtonWidget.builder(Text.translatable("tutorial.ui.next"),
-                btn -> nextStep()).dimensions(160, this.height - 30, 40, 20).build());
+                btn -> nextStep()).dimensions(160, this.height - 25, 40, 20).build());
         this.addDrawableChild(ButtonWidget.builder(Text.translatable("tutorial.ui.output"),
-                btn -> output()).dimensions(200, this.height - 30, 60, 20).build());
+                btn -> output()).dimensions(200, this.height - 25, 60, 20).build());
         this.addDrawableChild(ButtonWidget.builder(Text.literal((0f - renderState.pitch) + "P"),
                 btn -> {
                     if (renderState.pitch > -60) renderState.addPitch(15);
                     else renderState.addPitch(-120);
-                    this.client.setScreen(new TutorialGroupScreen(group, selectedMac, currentStep, renderState, blockListExternal));
-                }).dimensions(260, this.height - 30, 60, 20).build());
+                    this.client.setScreen(new TutorialGroupScreen(group, selectedMac, currentStep, renderState, blockListExternal, blocklistConsist));
+                }).dimensions(260, this.height - 25, 40, 20).build());
         this.addDrawableChild(ButtonWidget.builder(Text.literal("\u25B6"),
-                btn -> autoRotate = !autoRotate).dimensions(320, this.height - 30, 20, 20).build());
+                btn -> autoRotate = !autoRotate).dimensions(300, this.height - 25, 20, 20).build());
         this.addDrawableChild(ButtonWidget.builder(Text.literal("\u21BA"),
-                btn -> resetKey()).dimensions(340, this.height - 30, 20, 20).build());
+                btn -> resetKey()).dimensions(320, this.height - 25, 20, 20).build());
         NarratedMultilineTextWidget descWidget = new NarratedMultilineTextWidget(120, Text.translatable("tutorial." + machine.id + ".step" + currentStep), this.textRenderer);
         descWidget.setPosition(5, 165);
         this.addDrawableChild(descWidget);
         this.addDrawableChild(ButtonWidget.builder(Text.literal("EMI"),
-                btn -> Openpage()).dimensions(360, this.height - 30, 40, 20).build());
+                btn -> Openpage()).dimensions(340, this.height - 25, 20, 20).build());
+        this.addDrawableChild(ButtonWidget.builder(Text.literal(blocklistConsist ? "DIFF":"NORM"),
+                btn -> {
+                    blocklistConsist = !blocklistConsist;
+                    this.client.setScreen(new TutorialGroupScreen(group, selectedMac, currentStep, renderState, blockListExternal, blocklistConsist));
+                }).dimensions(360, this.height - 25, 40, 20).build());
 
     }
 
@@ -219,7 +230,7 @@ public class TutorialGroupScreen extends Screen {
         MachineInfo machine = choose2.get(selectedMac);
         if (TutorialManager.loadNbtFromResource(machine.id, currentStep + 1) != null) {
             currentStep++;
-            this.client.setScreen(new TutorialGroupScreen(group, selectedMac, currentStep, renderState, blockListExternal));
+            this.client.setScreen(new TutorialGroupScreen(group, selectedMac, currentStep, renderState, blockListExternal, blocklistConsist));
         } else {
             LOGGER.warn("CurrentStep Up NULL");
         }
@@ -228,7 +239,7 @@ public class TutorialGroupScreen extends Screen {
     public void lastStep() {
         if (currentStep > 1) {
             currentStep--;
-            this.client.setScreen(new TutorialGroupScreen(group, selectedMac, currentStep, renderState, blockListExternal));
+            this.client.setScreen(new TutorialGroupScreen(group, selectedMac, currentStep, renderState, blockListExternal, blocklistConsist));
         }
     }
 
