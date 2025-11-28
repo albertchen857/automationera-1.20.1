@@ -24,6 +24,13 @@ public class MachineEntryList extends EntryListWidget<MachineEntryList.Entry> {
     public void selectByIndex(int index) {
         if (index >= 0 && index < this.children().size()) {
             this.setSelected(this.children().get(index));
+            int entryTop = this.getRowLeft() + this.itemHeight * index;
+            if (entryTop < this.getScrollY()) {
+                this.setScrollY(entryTop);
+            }else if (entryTop + this.itemHeight > this.getScrollY() + this.getHeight()) {
+                int newScrollY = entryTop + this.itemHeight - this.getHeight();
+                this.setScrollY(newScrollY+5);
+            }
         }
     }
 
@@ -69,7 +76,7 @@ public class MachineEntryList extends EntryListWidget<MachineEntryList.Entry> {
     }
     @Override
     public int getRowWidth() {
-        return 120;
+        return 100;
     }
     @Override
     public int getRowLeft() {

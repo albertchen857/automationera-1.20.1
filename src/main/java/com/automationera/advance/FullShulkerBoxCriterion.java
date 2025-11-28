@@ -27,12 +27,12 @@ public class FullShulkerBoxCriterion extends AbstractCriterion<FullShulkerBoxCri
 
     @Override
     public Codec<Conditions> getConditionsCodec() {
-        LOGGER.info("FullStackCriterion CODEC");
+//        LOGGER.info("FullStackCriterion CODEC");
         return Conditions.CODEC;
     }
 
     public void trigger(ServerPlayerEntity player) {
-        LOGGER.info("FullShulkerBoxCriterion TRIGGER");
+//        LOGGER.info("FullShulkerBoxCriterion TRIGGER");
         this.trigger(player, conditions -> {
             Inventory inventory = player.getInventory();
             for (int i = 0; i < inventory.size(); i++) {
@@ -97,7 +97,7 @@ public class FullShulkerBoxCriterion extends AbstractCriterion<FullShulkerBoxCri
     }
 
     public static AdvancementCriterion<Conditions> createCriterion(ItemPredicate itemPredicate, int requiredStacks) {
-        LOGGER.info("FullStackCriterion CREATE");
+//        LOGGER.info("FullStackCriterion CREATE");
         return INSTANCE.create(new Conditions(itemPredicate, requiredStacks));
     }
 }

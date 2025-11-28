@@ -3,7 +3,13 @@ package com.automationera.ui;
 import com.automationera.OutputRecipe;
 import com.automationera.basic.ExportFile;
 
+import com.automationera.rei.reiPlugin;
 import com.mojang.blaze3d.opengl.GlStateManager;
+import me.shedaniel.rei.api.client.ClientHelper;
+import me.shedaniel.rei.api.client.view.ViewSearchBuilder;
+import me.shedaniel.rei.api.common.category.CategoryIdentifier;
+import me.shedaniel.rei.api.common.entry.EntryStack;
+import me.shedaniel.rei.api.common.util.EntryStacks;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.widget.ButtonWidget;
@@ -21,6 +27,7 @@ import net.minecraft.item.Items;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.text.Text;
 import net.minecraft.client.gui.DrawContext;
+import net.minecraft.util.Identifier;
 import org.slf4j.LoggerFactory;
 import java.util.List;
 import java.util.Map;
@@ -273,9 +280,23 @@ public class TutorialGroupScreen extends Screen {
     public void Openpage(){
         Map<String,List<?>> cm = OutputRecipe.ConvertMap();
         for (Map.Entry<String,List<?>> entry:cm.entrySet()){
-            LOGGER.info("{}//{}|{}/{}",entry.getKey(),entry.getValue(),group,selectedMac);
-            if (entry.getValue().getFirst().equals(group) && entry.getValue().getLast().equals(selectedMac)){
-                continue;
+            List<?> value = entry.getValue();
+            if (value.getFirst().equals(group) && value.getLast().equals(selectedMac)){
+                String key = entry.getKey();
+
+                EntryStack<?> entryStack = reiPlugin.ENTRY_BY_KEY.get(key);
+                if (entryStack == null) {
+                    LOGGER.warn("No EntryStack found from Openpage: {}", key);
+                    return;
+                }
+                ClientHelper.getInstance().openView(
+                        ViewSearchBuilder.builder()
+                                .addRecipesFor(entryStack)
+                                .setPreferredOpenedCategory(reiPlugin.MACHINE_CATEGORY_ID)
+
+                );
+
+                return;
             }
         }
     }

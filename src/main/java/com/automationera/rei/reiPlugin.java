@@ -12,14 +12,20 @@ import me.shedaniel.rei.api.client.plugins.REIClientPlugin;
 import me.shedaniel.rei.api.client.registry.category.CategoryRegistry;
 import me.shedaniel.rei.api.client.registry.display.DisplayRegistry;
 import me.shedaniel.rei.api.common.category.CategoryIdentifier;
+import me.shedaniel.rei.api.common.entry.EntryStack;
+import me.shedaniel.rei.api.common.util.EntryStacks;
 import net.minecraft.item.Item;
 import net.minecraft.item.Items;
 import net.minecraft.util.Identifier;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 public class reiPlugin implements REIClientPlugin {
+    public static final Logger LOGGER = LoggerFactory.getLogger("AutomationEra/REITest");
     // New Category Identifiers for REI (replace EmiRecipeCategory)
     public static final CategoryIdentifier<MachineReiRecipe> MACHINE_CATEGORY_ID =
             CategoryIdentifier.of("automationera", "machine");
@@ -34,6 +40,7 @@ public class reiPlugin implements REIClientPlugin {
     public static final Map<String, List<Item>> tut = new OutputRecipe().TutorialRecipy();
 
     public static final Identifier ICON_TEXTURE = Identifier.of("automationera", "icon.png");
+    public static final Map<String, EntryStack<?>> ENTRY_BY_KEY = new HashMap<>();
 
     @Override
     public void registerCategories(CategoryRegistry registry) {
@@ -46,20 +53,21 @@ public class reiPlugin implements REIClientPlugin {
 
     @Override
     public void registerDisplays(DisplayRegistry registry) {
-        // Register a sample machine recipe (circuit example)
         registry.add(new MachineReiRecipe(
                 new MachineRecipe(Items.REDSTONE, Items.REDSTONE),
                 "circuit",
                 List.of(List.of(Items.REDSTONE), List.of(Items.REDSTONE_BLOCK))
         ));
-        // Register each machine entry from ore map as a recipe (show all outputs of that machine)
+        ENTRY_BY_KEY.put("circuit", EntryStacks.of(Items.REDSTONE));
+        // Register Machine
         for (Map.Entry<String, List<List<Item>>> entry : ore.entrySet()) {
             String key = entry.getKey();
             List<Item> outputs = entry.getValue().get(0);
             List<Item> inputs = entry.getValue().get(1);
             if (!outputs.isEmpty()) {
                 // Use a dummy MachineRecipe (AIR -> first output) to represent machine outputs
-                registry.add(new MachineReiRecipe(new MachineRecipe(Items.AIR, outputs.getFirst()), key, entry.getValue()));
+                registry.add(new MachineReiRecipe(new MachineRecipe(outputs.getFirst(), outputs.getFirst()), key, entry.getValue()));
+                ENTRY_BY_KEY.put(key, EntryStacks.of(outputs.getFirst()));
             }
             // Note: The complementary input-focused machine recipe (MachineEmiRecipe in EMI) is omitted in REI for simplicity
         }

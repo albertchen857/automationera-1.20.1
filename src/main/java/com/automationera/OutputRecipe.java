@@ -751,14 +751,14 @@ public class OutputRecipe {
                 Items.PHANTOM_MEMBRANE
         ), List.of(Items.PHANTOM_SPAWN_EGG)));
         ore.put("pig", List.of(List.of(
-                Items.PORKCHOP,
-                Items.COOKED_PORKCHOP
+                Items.COOKED_PORKCHOP,
+                Items.PORKCHOP
         ), List.of(Items.PIG_SPAWN_EGG)));
         ore.put("smelt", List.of(List.of(), List.of(Items.LAVA_BUCKET,
                 Items.SHULKER_BOX)));
         ore.put("spider", List.of(List.of(
-                Items.STRING,
-                Items.SPIDER_EYE
+                Items.SPIDER_EYE,
+                Items.STRING
         ), List.of(Items.SPIDER_SPAWN_EGG)));
         ore.put("stone2", List.of(List.of(
                 Items.STONE
@@ -786,9 +786,6 @@ public class OutputRecipe {
         ), List.of(Items.TNT)));
 
         ore.put("tbm", List.of(List.of(
-                Items.COBBLESTONE,
-                Items.DEEPSLATE,
-                Items.NETHERRACK,
                 Items.COAL,
                 Items.RAW_COPPER,
                 Items.RAW_IRON,
@@ -796,7 +793,10 @@ public class OutputRecipe {
                 Items.LAPIS_LAZULI,
                 Items.REDSTONE,
                 Items.DIAMOND,
-                Items.QUARTZ
+                Items.QUARTZ,
+                Items.COBBLESTONE,
+                Items.DEEPSLATE,
+                Items.NETHERRACK
         ), List.of(Items.TNT)));
         ore.put("tnt", List.of(List.of(
                 Items.TNT

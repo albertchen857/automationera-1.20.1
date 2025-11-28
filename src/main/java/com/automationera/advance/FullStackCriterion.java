@@ -30,12 +30,12 @@ public class FullStackCriterion extends AbstractCriterion<FullStackCriterion.Con
 
     @Override
     public Codec<Conditions> getConditionsCodec() {
-        LOGGER.info("FullStackCriterion CODEC");
+//        LOGGER.info("FullStackCriterion CODEC");
         return Conditions.CODEC;
     }
 
     public void trigger(ServerPlayerEntity player, Set<Item> items, int requiredStacks) {
-        LOGGER.info("FullStackCriterion TRIGGER");
+//        LOGGER.info("FullStackCriterion TRIGGER");
         // FullStackCriterion.java
         this.trigger(player, conditions -> {
             // 只要当前 items 里有任意一个达标就触发
@@ -79,7 +79,7 @@ public class FullStackCriterion extends AbstractCriterion<FullStackCriterion.Con
 
     // 工厂方法，支持自动注册
     public static AdvancementCriterion<Conditions> createCriterion(Set<Item> items, int requiredStacks) {
-        LOGGER.info("FullStackCriterion CREATE");
+//        LOGGER.info("FullStackCriterion CREATE");
         return INSTANCE.create(new Conditions(items, requiredStacks));
     }
 }

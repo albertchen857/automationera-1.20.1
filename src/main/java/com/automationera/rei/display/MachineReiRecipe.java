@@ -14,10 +14,7 @@ import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Objects;
+import java.util.*;
 
 public class MachineReiRecipe implements Display {
     private final MachineRecipe recipe;
@@ -29,6 +26,7 @@ public class MachineReiRecipe implements Display {
     private static final Logger LOGGER = LoggerFactory.getLogger("AutomationEra/rei/display/MachineReiRecipe");
     private final Map<String, List<List<String>>> Ing = new com.automationera.OutputRecipe().OutputIng();
     private final Map<String, List<Item>> Template = new com.automationera.OutputRecipe().OutputTemplate();
+    private final Identifier ID;
 
     /**
      * Constructs a machine recipe display for REI.
@@ -41,10 +39,10 @@ public class MachineReiRecipe implements Display {
         this.recipe = recipe;
         this.representativeInput = recipe.input;
         this.representativeOutput = recipe.output;
-        // allOutputs list structure: [outputsList, inputsList]
         this.allOutputs = allOutputs.get(0);
         this.allInputs = allOutputs.get(1);
         this.key = key;
+        this.ID = Identifier.of("automationera", "machine_recipe_" + key);
     }
 
     @Override
@@ -66,7 +64,7 @@ public class MachineReiRecipe implements Display {
 
     @Override
     public List<EntryIngredient> getOutputEntries() {
-        if (allOutputs != null && !allOutputs.isEmpty()) {
+        if (!(allOutputs == null || allOutputs.isEmpty())) {
             // Show only the representative output (first in list)
             Item firstOutput = allOutputs.getFirst();
             return List.of(EntryIngredients.of(new ItemStack(firstOutput)));
@@ -102,4 +100,5 @@ public class MachineReiRecipe implements Display {
     public Map<String, List<Item>> getTemplate() {
         return Template;
     }
+    public Identifier getID(){return ID;}
 }
