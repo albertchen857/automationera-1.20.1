@@ -24,6 +24,13 @@ public class MachineEntryList extends EntryListWidget<MachineEntryList.Entry> {
     public void selectByIndex(int index) {
         if (index >= 0 && index < this.children().size()) {
             this.setSelected(this.children().get(index));
+            int entryTop = this.getRowLeft() + this.itemHeight * index;
+            if (entryTop < this.getScrollAmount()) {
+                this.setScrollAmount(entryTop);
+            }else if (entryTop + this.itemHeight > this.getScrollAmount() + this.getHeight()) {
+                int newScrollY = entryTop + this.itemHeight - this.getHeight();
+                this.setScrollAmount(newScrollY+5);
+            }
         }
     }
 

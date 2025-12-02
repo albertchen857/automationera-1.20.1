@@ -164,11 +164,6 @@ public class TutorialManager {
         RenderSystem.disableDepthTest();
         RenderSystem.disableCull();
         RenderSystem.disableBlend();
-
-        matrices.pop();
-//        LOGGER.info(immediate.toString());
-//        LOGGER.info(matrices.peek().getPositionMatrix().toString());
-//        LOGGER.info(matrices.peek().getNormalMatrix().toString());
     }
 
     public static void renderFluidCube(MatrixStack matrices, VertexConsumerProvider consumers,
